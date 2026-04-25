@@ -173,12 +173,15 @@ def create_app():
         next_month = month + 1 if month < 12 else 1
         next_year  = year if month < 12 else year + 1
 
+        open_event_id = request.args.get('open_event', type=int)
+
         return render_template('calendar.html',
             year=year, month=month, month_name=month_name,
             cal_grid=cal_grid, events_by_day=events_by_day,
             prev_year=prev_year, prev_month=prev_month,
             next_year=next_year, next_month=next_month,
             today=today,
+            open_event_id=open_event_id,
         )
 
     # ── API: Events CRUD ───────────────────────────────────────────────────────

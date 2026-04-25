@@ -167,46 +167,68 @@ a { color: inherit; text-decoration: none; }
   overflow: hidden;
 }
 
-/* Calendar: narrow navigation column */
+/* Default: calendar fills full width, panel hidden */
 .cal-main {
-  width: 300px; min-width: 300px;
+  flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  flex-shrink: 0;
-  border-right: 1px solid var(--grey-border);
+  transition: width 0.3s ease, min-width 0.3s ease, flex 0.3s ease;
 }
 
-/* Generator panel takes the main stage */
+/* Panel open: calendar shrinks to nav column, panel takes the rest */
+.cal-layout.panel-open .cal-main {
+  flex: none;
+  width: 300px; min-width: 300px;
+}
+
 .cal-layout .gen-panel {
-  flex: 1;
-  width: auto; min-width: 0;
+  width: 0; min-width: 0;
+  background: var(--white);
+  border-left: 1px solid var(--grey-border);
   overflow: hidden;
-  border-left: none;
-  transition: none;
+  transition: width 0.3s ease, min-width 0.3s ease;
+  display: flex; flex-direction: column;
+  flex-shrink: 0;
+}
+
+.cal-layout.panel-open .gen-panel {
+  flex: 1;
+  width: auto; min-width: 420px;
+  overflow: hidden;
 }
 
 .cal-layout .gen-panel-inner {
   width: 100%;
   max-width: 720px;
   margin: 0 auto;
+  overflow-y: auto;
+  height: 100%;
+  padding: 24px 28px;
+  display: flex; flex-direction: column; gap: 0;
 }
 
 /* ── Calendar Toolbar ──────────────────────────────────────────────────── */
 .cal-toolbar {
-  display: flex; flex-direction: column; gap: 8px;
-  padding: 10px 12px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px;
   background: var(--white);
   border-bottom: 1px solid var(--grey-border);
   flex-shrink: 0;
 }
 
-.cal-nav { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+/* When panel is open, toolbar stacks compactly */
+.cal-layout.panel-open .cal-toolbar {
+  flex-direction: column; gap: 8px; padding: 10px 10px;
+}
+
+.cal-nav { display: flex; align-items: center; gap: 10px; }
+.cal-layout.panel-open .cal-nav { justify-content: space-between; width: 100%; }
 
 .cal-nav-btn {
-  width: 28px; height: 28px;
+  width: 30px; height: 30px;
   background: var(--grey-bg); border: 1px solid var(--grey-border);
-  border-radius: 5px;
+  border-radius: 6px;
   display: flex; align-items: center; justify-content: center;
   font-size: 16px; color: var(--text-mid); cursor: pointer;
   transition: all 0.15s; flex-shrink: 0;
@@ -215,11 +237,17 @@ a { color: inherit; text-decoration: none; }
 
 .cal-month-title {
   font-family: 'Playfair Display', serif;
-  font-size: 15px; font-weight: 700; color: var(--navy);
-  text-align: center; flex: 1;
+  font-size: 18px; font-weight: 700; color: var(--navy);
+  min-width: 200px; text-align: center;
+}
+.cal-layout.panel-open .cal-month-title {
+  font-size: 14px; min-width: 0; flex: 1;
 }
 
-.cal-actions { display: flex; gap: 6px; }
+.cal-actions { display: flex; gap: 8px; }
+.cal-layout.panel-open .cal-actions { width: 100%; }
+.cal-layout.panel-open .cal-actions .btn-import,
+.cal-layout.panel-open .cal-actions .btn-add { flex: 1; }
 
 .btn-import {
   flex: 1; padding: 6px 8px;
@@ -243,16 +271,18 @@ a { color: inherit; text-decoration: none; }
 
 /* ── Legend ────────────────────────────────────────────────────────────── */
 .cal-legend {
-  display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 10px;
+  display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 20px;
   background: var(--white);
   border-bottom: 1px solid var(--grey-border);
   flex-shrink: 0;
 }
+.cal-layout.panel-open .cal-legend { padding: 6px 8px; gap: 4px; }
 
 .legend-chip {
-  font-size: 10px; font-weight: 600; padding: 2px 7px;
-  border-radius: 8px; color: #fff;
+  font-size: 11px; font-weight: 600; padding: 2px 9px;
+  border-radius: 10px; color: #fff;
 }
+.cal-layout.panel-open .legend-chip { font-size: 9px; padding: 2px 6px; }
 .legend-chip.holiday    { background: var(--cat-holiday); }
 .legend-chip.admissions { background: var(--cat-admissions); }
 .legend-chip.academic   { background: var(--cat-academic); }
@@ -276,32 +306,35 @@ a { color: inherit; text-decoration: none; }
   background: var(--grey-bg);
   border-right: 1px solid var(--grey-border);
   border-bottom: 1px solid var(--grey-border);
-  padding: 5px 2px;
-  font-size: 9px; font-weight: 700;
+  padding: 7px 4px;
+  font-size: 11px; font-weight: 700;
   color: var(--text-light); text-transform: uppercase; letter-spacing: 0.3px;
   text-align: center;
 }
+.cal-layout.panel-open .cal-dow { padding: 5px 2px; font-size: 9px; }
 
 .cal-cell {
   border-right: 1px solid var(--grey-border);
   border-bottom: 1px solid var(--grey-border);
-  padding: 4px 4px;
+  padding: 6px 6px;
   background: var(--white);
-  min-height: 64px;
+  min-height: 90px;
   transition: background 0.1s;
 }
+.cal-layout.panel-open .cal-cell { padding: 4px 3px; min-height: 60px; }
 
 .cal-cell.empty { background: var(--grey-bg); }
 
 .cal-cell.today { background: #fffbf0; }
 
 .cal-day-num {
-  font-size: 11px; font-weight: 600; color: var(--text-light);
-  margin-bottom: 2px;
-  width: 20px; height: 20px;
+  font-size: 12px; font-weight: 600; color: var(--text-light);
+  margin-bottom: 3px;
+  width: 22px; height: 22px;
   display: flex; align-items: center; justify-content: center;
   border-radius: 50%;
 }
+.cal-layout.panel-open .cal-day-num { font-size: 10px; width: 18px; height: 18px; }
 
 .cal-day-num.today-num {
   background: var(--navy); color: var(--white);
@@ -309,12 +342,13 @@ a { color: inherit; text-decoration: none; }
 }
 
 .cal-event {
-  font-size: 9px; font-weight: 700;
-  padding: 2px 5px; border-radius: 3px;
-  margin-bottom: 2px; cursor: pointer;
+  font-size: 11px; font-weight: 600;
+  padding: 2px 7px; border-radius: 4px;
+  margin-bottom: 3px; cursor: pointer;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  color: #fff; transition: opacity 0.1s; line-height: 1.4;
+  color: #fff; transition: opacity 0.1s;
 }
+.cal-layout.panel-open .cal-event { font-size: 9px; padding: 2px 4px; margin-bottom: 2px; }
 .cal-event:hover { opacity: 0.85; }
 
 .cal-event.holiday    { background: var(--cat-holiday); }

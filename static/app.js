@@ -41,13 +41,28 @@ async function markPosted(draftId, btn) {
       body: JSON.stringify({ status: 'posted' }),
     });
     if (!resp.ok) throw new Error((await resp.json()).error);
-    btn.textContent = 'Posted';
+
+    btn.textContent = '✓ Posted';
     btn.disabled = true;
-    const badge = document.getElementById(`sb-${draftId}`);
-    if (badge) {
-      badge.textContent = 'Posted ✓';
-      badge.className = 'status-badge posted';
+
+    // Update copy row item (dashboard this-week view)
+    const copyItem = btn.closest('.ec-copy-item');
+    if (copyItem) {
+      copyItem.classList.remove('draft_ready','needs_post','scheduled');
+      copyItem.classList.add('posted');
     }
+
+    // Update existing-draft card (calendar event detail view)
+    const existingDraft = btn.closest('.gen-existing-draft');
+    if (existingDraft) {
+      const statusEl = existingDraft.querySelector('.gen-existing-status');
+      if (statusEl) { statusEl.textContent = 'Posted ✓'; statusEl.className = 'gen-existing-status status-badge posted'; }
+    }
+
+    // Update dashboard compact status badge if present
+    const badge = document.getElementById(`sb-${draftId}`);
+    if (badge) { badge.textContent = 'Posted ✓'; badge.className = 'status-badge posted'; }
+
     showToast('Marked as posted!');
   } catch (err) {
     showToast('Error: ' + err.message);
@@ -66,11 +81,17 @@ function designInCanvaByPlatform(platform, content) {
 
 // ── Event Panel ───────────────────────────────────────────────────────────
 
+function _setPanelOpen(open) {
+  const layout = document.querySelector('.cal-layout');
+  if (layout) layout.classList.toggle('panel-open', open);
+}
+
 function showEmptyState() {
   ['genEmptyState','genEventState','genDayState'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = id === 'genEmptyState' ? '' : 'none';
   });
+  _setPanelOpen(false);
   activeEvent = null;
 }
 
@@ -129,6 +150,7 @@ function openDay(evt, cell) {
   });
   const dayState = document.getElementById('genDayState');
   if (dayState) dayState.style.display = '';
+  _setPanelOpen(true);
 }
 
 async function generateDayFreeform() {
@@ -191,6 +213,7 @@ async function openEvent(el) {
   });
   const eventState = document.getElementById('genEventState');
   if (eventState) eventState.style.display = '';
+  _setPanelOpen(true);
 
   // Fetch and show existing drafts
   const existingEl = document.getElementById('genExistingDrafts');
@@ -243,6 +266,10 @@ function renderExistingDrafts(container, drafts) {
 }
 
 function closePanel() {
+  // Dashboard: remove .open slide-in class
+  const panel = document.getElementById('genPanel');
+  if (panel) panel.classList.remove('open');
+  // Calendar: reset state divs + remove .panel-open from layout
   showEmptyState();
 }
 

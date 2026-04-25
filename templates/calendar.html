@@ -266,9 +266,20 @@
 
 {% block scripts %}
 <script>
-  // Pass server-rendered data to JS
   const CURRENT_YEAR  = {{ year }};
   const CURRENT_MONTH = {{ month }};
 </script>
 <script src="{{ url_for('static', filename='app.js') }}"></script>
+{% if open_event_id %}
+<script>
+  // Auto-open the generator for a specific event on page load
+  document.addEventListener('DOMContentLoaded', () => {
+    const chip = document.querySelector('.cal-event[data-id="{{ open_event_id }}"]');
+    if (chip) {
+      chip.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => chip.click(), 300);
+    }
+  });
+</script>
+{% endif %}
 {% endblock %}

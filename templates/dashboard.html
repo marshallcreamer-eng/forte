@@ -114,7 +114,7 @@
       {% if coverage.gaps %}
       <div class="coverage-gaps-label">Next up with no content:</div>
       {% for ev in coverage.gaps %}
-      <a class="coverage-gap-link" href="{{ url_for('calendar_view', year=ev.date.year, month=ev.date.month) }}">
+      <a class="coverage-gap-link" href="{{ url_for('calendar_view', year=ev.date.year, month=ev.date.month, open_event=ev.id) }}">
         {{ ev.date.strftime('%b %-d') }} — {{ ev.title }}
       </a>
       {% endfor %}
