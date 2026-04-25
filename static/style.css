@@ -44,7 +44,7 @@ a { color: inherit; text-decoration: none; }
 /* ── Header ────────────────────────────────────────────────────────────── */
 .f-header {
   background: var(--navy);
-  height: 56px;
+  height: 60px;
   display: flex;
   align-items: center;
   padding: 0 20px;
@@ -52,7 +52,11 @@ a { color: inherit; text-decoration: none; }
   gap: 0;
 }
 
-.f-header-brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+/* Forte brand — clickable home link */
+.f-header-brand {
+  display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+  text-decoration: none;
+}
 
 .f-logo-mark {
   width: 32px; height: 32px;
@@ -77,17 +81,49 @@ a { color: inherit; text-decoration: none; }
   letter-spacing: 0.5px; text-transform: uppercase; margin-top: 1px;
 }
 
+/* Global nav */
+.f-global-nav { display: flex; align-items: center; gap: 4px; margin-left: 4px; }
+
+.f-nav-link {
+  font-size: 13px; font-weight: 600;
+  color: rgba(255,255,255,0.5);
+  padding: 5px 12px; border-radius: 6px;
+  transition: all 0.15s;
+}
+.f-nav-link:hover { color: var(--white); background: rgba(255,255,255,0.08); }
+.f-nav-link.active { color: var(--white); background: rgba(255,255,255,0.12); }
+
 .f-header-divider {
   width: 1px; height: 24px;
   background: rgba(255,255,255,0.15);
-  margin: 0 20px;
+  margin: 0 16px;
   flex-shrink: 0;
 }
 
+/* BPA school block */
+.f-school-block {
+  display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+}
+
+.f-bpa-logo {
+  width: 34px; height: 34px;
+  border-radius: 6px;
+  object-fit: contain;
+  background: rgba(255,255,255,0.08);
+  padding: 2px;
+}
+
+.f-school-info { line-height: 1.2; }
+
 .f-school-name {
-  font-size: 13px; font-weight: 700;
-  color: rgba(255,255,255,0.75);
-  letter-spacing: 0.2px;
+  font-size: 12px; font-weight: 700;
+  color: rgba(255,255,255,0.85);
+}
+
+.f-school-tagline {
+  font-size: 10px; font-weight: 600;
+  color: var(--gold);
+  text-transform: uppercase; letter-spacing: 0.5px;
 }
 
 .f-header-user {
@@ -101,8 +137,6 @@ a { color: inherit; text-decoration: none; }
   display: flex; align-items: center; justify-content: center;
   font-size: 11px; font-weight: 800; color: var(--navy);
 }
-
-.f-user-name { font-size: 12px; color: rgba(255,255,255,0.55); }
 
 .f-logout {
   font-size: 11px; color: rgba(255,255,255,0.35);
@@ -351,28 +385,50 @@ a { color: inherit; text-decoration: none; }
   font-size: 12px; color: var(--text-light); margin-bottom: 16px; line-height: 1.5;
 }
 
-/* Platform toggles */
-.gen-platforms {
-  display: flex; flex-wrap: wrap; gap: 8px;
+/* Platform card grid */
+.plat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
   margin-bottom: 16px;
 }
 
-.plat-toggle {
-  display: flex; align-items: center; gap: 5px;
-  padding: 5px 12px; border-radius: 20px;
-  font-size: 12px; font-weight: 600; cursor: pointer;
-  border: 1.5px solid var(--grey-border);
-  color: var(--text-light); transition: all 0.15s;
-  user-select: none;
+.plat-card {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 5px; padding: 12px 8px;
+  border-radius: 10px; border: 1.5px solid var(--grey-border);
+  background: var(--grey-bg); cursor: pointer;
+  transition: all 0.15s; user-select: none;
+  min-height: 70px;
 }
-.plat-toggle input { display: none; }
+.plat-card input { display: none; }
+.plat-card:hover { border-color: var(--navy-mid); background: var(--navy-light); }
 
-.plat-toggle.active {
-  border-color: var(--navy); color: var(--navy);
-  background: var(--navy-light);
+.plat-card.active {
+  background: var(--navy); border-color: var(--navy);
 }
 
-.plat-icon { font-style: normal; }
+.plat-card-icon {
+  font-size: 20px; line-height: 1;
+  font-style: normal; font-weight: 800;
+  color: var(--text-light);
+}
+.plat-card.active .plat-card-icon { color: var(--white); }
+
+.plat-card-name {
+  font-size: 11px; font-weight: 700; text-align: center;
+  color: var(--text-light); line-height: 1.2;
+}
+.plat-card.active .plat-card-name { color: rgba(255,255,255,0.9); }
+
+.plat-card-tick {
+  position: absolute; top: 5px; right: 7px;
+  font-size: 10px; font-weight: 900;
+  color: var(--gold); opacity: 0;
+  transition: opacity 0.15s;
+}
+.plat-card.active .plat-card-tick { opacity: 1; }
 
 /* Tone override */
 .gen-tone-row { margin-bottom: 14px; }
@@ -671,6 +727,26 @@ textarea.form-control { resize: vertical; }
 .login-wrap { width: 400px; }
 
 .login-brand { text-align: center; margin-bottom: 28px; }
+
+.login-bpa-logo {
+  width: 72px; height: 72px; object-fit: contain;
+  margin: 0 auto 10px; display: block;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));
+}
+.login-school {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px; font-weight: 700; color: var(--white);
+  margin-bottom: 2px;
+}
+.login-tagline-school {
+  font-size: 11px; font-weight: 700; color: var(--gold);
+  text-transform: uppercase; letter-spacing: 1px;
+  margin-bottom: 14px;
+}
+.login-divider-brand {
+  width: 40px; height: 1px; background: rgba(255,255,255,0.15);
+  margin: 0 auto 14px;
+}
 
 .login-logo-mark {
   width: 56px; height: 56px;

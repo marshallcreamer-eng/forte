@@ -102,7 +102,7 @@ async function generateDrafts() {
   if (!activeEvent) return;
 
   const platforms = Array.from(
-    document.querySelectorAll('.plat-toggle.active input')
+    document.querySelectorAll('.plat-card.active input')
   ).map(cb => cb.value);
 
   if (!platforms.length) {
@@ -279,7 +279,7 @@ function designInCanva(platform, canvaType, btn) {
 
 // ── Platform Toggles ──────────────────────────────────────────────────────
 
-document.querySelectorAll('.plat-toggle').forEach(label => {
+document.querySelectorAll('.plat-card').forEach(label => {
   label.addEventListener('click', () => {
     const cb = label.querySelector('input');
     cb.checked = !cb.checked;

@@ -15,19 +15,46 @@
 
   <!-- Header -->
   <header class="f-header">
-    <div class="f-header-brand">
+    <!-- Left: Forte brand (clickable → home) -->
+    <a href="{{ url_for('dashboard') }}" class="f-header-brand">
       <div class="f-logo-mark">♪</div>
       <div class="f-wordmark">
         <div class="f-product">FORTE</div>
         <div class="f-by">by Automatey</div>
       </div>
-    </div>
+    </a>
+
     <div class="f-header-divider"></div>
-    <div class="f-school-name">Belton Preparatory Academy</div>
+
+    <!-- Global nav -->
+    <nav class="f-global-nav">
+      <a href="{{ url_for('dashboard') }}"
+         class="f-nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+        Dashboard
+      </a>
+      <a href="{{ url_for('calendar_view') }}"
+         class="f-nav-link {% if request.endpoint == 'calendar_view' %}active{% endif %}">
+        Calendar
+      </a>
+    </nav>
+
     <div style="flex:1"></div>
+
+    <!-- Right: BPA logo + school name -->
+    <div class="f-school-block">
+      <img src="{{ url_for('static', filename='bpa-logo.png') }}"
+           alt="BPA Knights" class="f-bpa-logo">
+      <div class="f-school-info">
+        <div class="f-school-name">Belton Preparatory Academy</div>
+        <div class="f-school-tagline">Knight Up</div>
+      </div>
+    </div>
+
+    <div class="f-header-divider"></div>
+
+    <!-- User -->
     <div class="f-header-user">
       <div class="f-avatar">{{ current_user.initials }}</div>
-      <span class="f-user-name">{{ current_user.name }}</span>
       <a href="{{ url_for('logout') }}" class="f-logout">Sign out</a>
     </div>
   </header>

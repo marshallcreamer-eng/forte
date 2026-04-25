@@ -1,24 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Dashboard{% endblock %}
 
-{% block head %}
-<style>
-  .dash-nav { display:flex; gap:8px; padding:14px 24px; background:#fff; border-bottom:1px solid var(--grey-border); }
-  .dash-nav a {
-    font-size:13px; font-weight:600; padding:6px 16px; border-radius:6px;
-    color:var(--text-light); transition:all 0.15s;
-  }
-  .dash-nav a.active, .dash-nav a:hover { background:var(--navy-light); color:var(--navy); }
-</style>
-{% endblock %}
-
 {% block content %}
-
-<!-- Sub-nav -->
-<div class="dash-nav">
-  <a href="{{ url_for('dashboard') }}" class="active">Dashboard</a>
-  <a href="{{ url_for('calendar_view') }}">Full Calendar</a>
-</div>
 
 <div class="dash-wrap">
 
@@ -88,14 +71,14 @@
       <p class="gen-event-desc" id="genDesc"></p>
     </div>
     <div class="gen-section">
-      <div class="gen-section-label">Generate posts</div>
-      <div class="gen-platforms">
-        <label class="plat-toggle active" data-platform="facebook"><input type="checkbox" value="facebook" checked><span class="plat-icon">f</span> Facebook</label>
-        <label class="plat-toggle active" data-platform="instagram"><input type="checkbox" value="instagram" checked><span class="plat-icon">📷</span> Instagram</label>
-        <label class="plat-toggle active" data-platform="linkedin"><input type="checkbox" value="linkedin" checked><span class="plat-icon">in</span> LinkedIn</label>
-        <label class="plat-toggle" data-platform="x"><input type="checkbox" value="x"><span class="plat-icon">𝕏</span> X</label>
-        <label class="plat-toggle active" data-platform="classdojo"><input type="checkbox" value="classdojo" checked><span class="plat-icon">🏫</span> ClassDojo</label>
-        <label class="plat-toggle active" data-platform="email"><input type="checkbox" value="email" checked><span class="plat-icon">✉️</span> Newsletter</label>
+      <div class="gen-section-label">Select platforms</div>
+      <div class="plat-grid">
+        <label class="plat-card active" data-platform="facebook"><input type="checkbox" value="facebook" checked><span class="plat-card-icon">f</span><span class="plat-card-name">Facebook</span><span class="plat-card-tick">✓</span></label>
+        <label class="plat-card active" data-platform="instagram"><input type="checkbox" value="instagram" checked><span class="plat-card-icon">📷</span><span class="plat-card-name">Instagram</span><span class="plat-card-tick">✓</span></label>
+        <label class="plat-card active" data-platform="linkedin"><input type="checkbox" value="linkedin" checked><span class="plat-card-icon">in</span><span class="plat-card-name">LinkedIn</span><span class="plat-card-tick">✓</span></label>
+        <label class="plat-card" data-platform="x"><input type="checkbox" value="x"><span class="plat-card-icon">𝕏</span><span class="plat-card-name">X / Twitter</span><span class="plat-card-tick">✓</span></label>
+        <label class="plat-card active" data-platform="classdojo"><input type="checkbox" value="classdojo" checked><span class="plat-card-icon">🏫</span><span class="plat-card-name">ClassDojo</span><span class="plat-card-tick">✓</span></label>
+        <label class="plat-card active" data-platform="email"><input type="checkbox" value="email" checked><span class="plat-card-icon">✉️</span><span class="plat-card-name">Newsletter</span><span class="plat-card-tick">✓</span></label>
       </div>
       <div class="gen-tone-row">
         <label class="gen-tone-label">Tone override <span class="gen-tone-hint">(optional)</span></label>
