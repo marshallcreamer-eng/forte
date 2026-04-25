@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<div class="settings-wrap">
+
+  <div class="settings-header">
+    <h1 class="settings-title">Settings</h1>
+    <div class="settings-subtitle">Manage how Forte works for Belton Preparatory Academy</div>
+  </div>
+
+  <!-- ── Tabs ──────────────────────────────────────────────────────────── -->
+  <div class="settings-tabs">
+    <button class="stab active" onclick="showTab('categories', this)">Event Categories</button>
+    <button class="stab" onclick="showTab('tov', this)">Tone of Voice</button>
+  </div>
+
+  <!-- ── Event Categories ──────────────────────────────────────────────── -->
+  <div class="settings-panel" id="tab-categories">
+
+    <div class="settings-section-header">
+      <div>
+        <div class="settings-section-title">Event Categories</div>
+        <div class="settings-section-sub">Categories are used to colour-code events on the calendar and help the AI tailor the tone of each post. Preset categories cannot be deleted.</div>
+      </div>
+    </div>
+
+    <div class="cat-list" id="catList">
+      {% for cat in categories %}
+      <div class="cat-row" id="cat-{{ cat.id }}" data-id="{{ cat.id }}" data-preset="{{ 'true' if cat.is_preset else 'false' }}">
+        <div class="cat-swatch" style="background: {{ cat.color }}"></div>
+        <div class="cat-info">
+          <span class="cat-name" id="cat-name-{{ cat.id }}">{{ cat.name }}</span>
+          {% if cat.is_preset %}<span class="cat-preset-badge">Preset</span>{% endif %}
+        </div>
+        <div class="cat-actions">
+          <button class="btn-cat-edit" onclick="editCategory({{ cat.id }}, '{{ cat.name | e }}', '{{ cat.color }}')">Edit</button>
+          {% if not cat.is_preset %}
+          <button class="btn-cat-delete" onclick="deleteCategory({{ cat.id }})">Delete</button>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Add new category -->
+    <div class="cat-add-form">
+      <div class="cat-add-title">Add a new category</div>
+      <div class="cat-add-row">
+        <input type="color" class="cat-color-input" id="newCatColor" value="#3b82f6">
+        <input type="text" class="form-control cat-name-input" id="newCatName" placeholder="e.g. Reading Week, Parent Event, STEM…" maxlength="50">
+        <button class="btn-confirm cat-add-btn" onclick="addCategory()">Add</button>
+      </div>
+    </div>
+
+    <!-- Edit modal inline -->
+    <div class="cat-edit-modal" id="catEditModal" style="display:none">
+      <div class="cat-edit-inner">
+        <input type="hidden" id="editCatId">
+        <div class="cat-edit-title">Edit category</div>
+        <div class="cat-add-row">
+          <input type="color" class="cat-color-input" id="editCatColor">
+          <input type="text" class="form-control cat-name-input" id="editCatName" maxlength="50">
+        </div>
+        <div class="cat-edit-actions">
+          <button class="btn-cancel" onclick="closeCatEdit()">Cancel</button>
+          <button class="btn-confirm" onclick="saveCategoryEdit()">Save</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Tone of Voice ─────────────────────────────────────────────────── -->
+  <div class="settings-panel" id="tab-tov" style="display:none">
+
+    <div class="settings-section-header">
+      <div>
+        <div class="settings-section-title">Tone of Voice</div>
+        <div class="settings-section-sub">
+          This is the writing personality baked into every post Forte generates. It was derived from BPA's public website copy and communications — it shapes every word the AI writes.
+        </div>
+      </div>
+      <div class="tov-source-badge">Sourced from beltonprep.us</div>
+    </div>
+
+    {% if tov %}
+
+    <!-- Brand personality -->
+    <div class="tov-block">
+      <div class="tov-block-title">Brand personality</div>
+      <div class="tov-chips">
+        {% for trait in tov.get('brand_personality', []) %}
+        <span class="tov-chip">{{ trait }}</span>
+        {% endfor %}
+      </div>
+      <div class="tov-block-note">Formality: <strong>{{ tov.get('formality_level', '—') }}</strong></div>
+    </div>
+
+    <!-- Content pillars -->
+    <div class="tov-block">
+      <div class="tov-block-title">Content pillars</div>
+      <div class="tov-chips">
+        {% for pillar in tov.get('content_pillars', []) %}
+        <span class="tov-chip pillar">{{ pillar }}</span>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Vocabulary -->
+    <div class="tov-block">
+      <div class="tov-block-title">Vocabulary</div>
+      <div class="tov-vocab-row">
+        <div class="tov-vocab-col">
+          <div class="tov-vocab-label green">Words to use</div>
+          <div class="tov-chips small">
+            {% for word in tov.get('vocabulary', {}).get('preferred_words', []) %}
+            <span class="tov-chip small green">{{ word }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="tov-vocab-col">
+          <div class="tov-vocab-label red">Words to avoid</div>
+          <div class="tov-chips small">
+            {% for word in tov.get('vocabulary', {}).get('avoided_words', []) %}
+            <span class="tov-chip small red">{{ word }}</span>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% if tov.get('vocabulary', {}).get('signature_phrases') %}
+      <div class="tov-vocab-label" style="margin-top:12px">Signature phrases</div>
+      <div class="tov-chips small">
+        {% for phrase in tov.get('vocabulary', {}).get('signature_phrases', []) %}
+        <span class="tov-chip small gold">{{ phrase }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Do's and Don'ts -->
+    <div class="tov-block tov-rules">
+      <div class="tov-rules-col">
+        <div class="tov-block-title green">Always do</div>
+        <ul class="tov-list">
+          {% for item in tov.get('what_to_always_do', []) %}
+          <li>{{ item }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div class="tov-rules-col">
+        <div class="tov-block-title red">Never do</div>
+        <ul class="tov-list">
+          {% for item in tov.get('what_to_never_do', []) %}
+          <li>{{ item }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+
+    <!-- Per-channel guidance -->
+    <div class="tov-block">
+      <div class="tov-block-title">How tone adapts per channel</div>
+      <div class="tov-channels">
+        <div class="tov-channel-card" data-platform="facebook">
+          <div class="tov-channel-dot"></div>
+          <div class="tov-channel-name">Facebook</div>
+          <div class="tov-channel-desc">Warm, community storytelling. 100–200 words. 1–2 emojis. End with a parent question or call to action.</div>
+        </div>
+        <div class="tov-channel-card" data-platform="instagram">
+          <div class="tov-channel-dot"></div>
+          <div class="tov-channel-name">Instagram</div>
+          <div class="tov-channel-desc">Visual-first, punchy opening. 40–80 words. 3–5 emojis. 5–8 hashtags. Always #BeltonPrepAcademy.</div>
+        </div>
+        <div class="tov-channel-card" data-platform="linkedin">
+          <div class="tov-channel-dot"></div>
+          <div class="tov-channel-name">LinkedIn</div>
+          <div class="tov-channel-desc">Professional but warm. Student outcomes and school mission focus. 100–200 words. No casual slang.</div>
+        </div>
+        <div class="tov-channel-card" data-platform="x">
+          <div class="tov-channel-dot"></div>
+          <div class="tov-channel-name">X / Twitter</div>
+          <div class="tov-channel-desc">One punchy sentence or stat. Max 260 characters. 1–2 hashtags. Optional emoji.</div>
+        </div>
+        <div class="tov-channel-card" data-platform="classdojo">
+          <div class="tov-channel-dot"></div>
+          <div class="tov-channel-name">ClassDojo</div>
+          <div class="tov-channel-desc">Direct parent-facing announcement. 50–120 words. No hashtags. Plain English. End with any action needed.</div>
+        </div>
+        <div class="tov-channel-card" data-platform="email">
+          <div class="tov-channel-dot"></div>
+          <div class="tov-channel-name">Newsletter</div>
+          <div class="tov-channel-desc">Parent email paragraph. 80–150 words. Clear headline, key details, warm close. Ready for Mailchimp or ClassDojo story.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Emoji + hashtag style -->
+    <div class="tov-block tov-style-row">
+      <div class="tov-style-item">
+        <div class="tov-style-label">Emoji use</div>
+        <div class="tov-style-value">{{ tov.get('emoji_use', '—') }}</div>
+      </div>
+      <div class="tov-style-item">
+        <div class="tov-style-label">Hashtag style</div>
+        <div class="tov-style-value">{{ tov.get('hashtag_style', '—') }}</div>
+      </div>
+    </div>
+
+    {% else %}
+    <div class="tov-empty">Tone of voice data not found. Check <code>data/tov_bpa.json</code>.</div>
+    {% endif %}
+
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showTab(id, btn) {
+  document.querySelectorAll('.settings-panel').forEach(p => p.style.display = 'none');
+  document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).style.display = '';
+  btn.classList.add('active');
+}
+
+function editCategory(id, name, color) {
+  document.getElementById('editCatId').value    = id;
+  document.getElementById('editCatName').value  = name;
+  document.getElementById('editCatColor').value = color;
+  document.getElementById('catEditModal').style.display = '';
+  document.getElementById('editCatName').focus();
+}
+
+function closeCatEdit() {
+  document.getElementById('catEditModal').style.display = 'none';
+}
+
+async function saveCategoryEdit() {
+  const id    = document.getElementById('editCatId').value;
+  const name  = document.getElementById('editCatName').value.trim();
+  const color = document.getElementById('editCatColor').value;
+  if (!name) return;
+  try {
+    const resp = await fetch(`/api/categories/${id}`, {
+      method: 'PUT', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ name, color }),
+    });
+    if (!resp.ok) throw new Error((await resp.json()).error);
+    const el = document.getElementById(`cat-name-${id}`);
+    if (el) el.textContent = name;
+    document.querySelector(`#cat-${id} .cat-swatch`).style.background = color;
+    closeCatEdit();
+    showToast('Category updated');
+  } catch (e) { showToast('Error: ' + e.message); }
+}
+
+async function addCategory() {
+  const name  = document.getElementById('newCatName').value.trim();
+  const color = document.getElementById('newCatColor').value;
+  if (!name) { document.getElementById('newCatName').focus(); return; }
+  try {
+    const resp = await fetch('/api/categories', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ name, color }),
+    });
+    if (!resp.ok) throw new Error((await resp.json()).error);
+    const cat = await resp.json();
+    const list = document.getElementById('catList');
+    const row  = document.createElement('div');
+    row.className = 'cat-row'; row.id = `cat-${cat.id}`;
+    row.innerHTML = `
+      <div class="cat-swatch" style="background:${cat.color}"></div>
+      <div class="cat-info"><span class="cat-name" id="cat-name-${cat.id}">${cat.name}</span></div>
+      <div class="cat-actions">
+        <button class="btn-cat-edit" onclick="editCategory(${cat.id},'${cat.name}','${cat.color}')">Edit</button>
+        <button class="btn-cat-delete" onclick="deleteCategory(${cat.id})">Delete</button>
+      </div>`;
+    list.appendChild(row);
+    document.getElementById('newCatName').value = '';
+    showToast('Category added');
+  } catch (e) { showToast('Error: ' + e.message); }
+}
+
+async function deleteCategory(id) {
+  if (!confirm('Delete this category? Events using it will keep the tag but lose the colour.')) return;
+  try {
+    const resp = await fetch(`/api/categories/${id}`, { method: 'DELETE' });
+    if (!resp.ok) throw new Error((await resp.json()).error);
+    document.getElementById(`cat-${id}`)?.remove();
+    showToast('Category deleted');
+  } catch (e) { showToast('Error: ' + e.message); }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+{% endblock %}

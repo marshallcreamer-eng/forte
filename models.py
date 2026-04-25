@@ -73,6 +73,23 @@ class Event(db.Model):
         return summary
 
 
+class Category(db.Model):
+    __tablename__ = 'categories'
+    id         = db.Column(db.Integer, primary_key=True)
+    name       = db.Column(db.String(60), nullable=False)
+    slug       = db.Column(db.String(40), nullable=False, unique=True)
+    color      = db.Column(db.String(7), default='#64748b')
+    is_preset  = db.Column(db.Boolean, default=False)
+    sort_order = db.Column(db.Integer, default=99)
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'name': self.name,
+            'slug': self.slug, 'color': self.color,
+            'is_preset': self.is_preset, 'sort_order': self.sort_order,
+        }
+
+
 class Draft(db.Model):
     __tablename__ = 'drafts'
     id            = db.Column(db.Integer, primary_key=True)

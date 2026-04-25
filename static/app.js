@@ -1,8 +1,9 @@
 /* ── Forte by Automatey — Frontend ─────────────────────────────────────── */
 
 // ── State ─────────────────────────────────────────────────────────────────
-let activeEvent    = null;   // {id, title, desc, date, category}
-let importedEvents = [];     // events waiting for review
+let activeEvent     = null;   // {id, title, desc, date, category}
+let lastEventText   = '';     // last text sent to generate — used by Regenerate
+let importedEvents  = [];     // events waiting for review
 
 // ── Dashboard helpers ─────────────────────────────────────────────────────
 
@@ -22,15 +23,9 @@ function openEventFromDash(id, title, desc, dateStr, category) {
   panel.classList.add('open');
 }
 
-async function copyDraftById(draftId, content, btn) {
-  navigator.clipboard.writeText(content).catch(() => {
-    const ta = document.createElement('textarea');
-    ta.value = content; document.body.appendChild(ta); ta.select();
-    document.execCommand('copy'); document.body.removeChild(ta);
-  });
-  btn.textContent = '✓ Copied!';
-  btn.classList.add('copied');
-  setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+function copyDraftById(draftId, content, btn) {
+  _copyText(content);
+  _flashCopied(btn, 'Copy');
 }
 
 async function markPosted(draftId, btn) {
@@ -148,6 +143,7 @@ async function generateDayFreeform() {
   results.innerHTML = `<div class="gen-loading"><div class="gen-spinner"></div><div class="gen-loading-text">Writing in BPA's tone of voice…</div></div>`;
 
   try {
+    lastEventText = text;
     const resp = await fetch('/api/generate', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ event_text: text, tone_override: tone, platforms }),
@@ -307,6 +303,8 @@ async function generateDrafts() {
     </div>`;
 
   try {
+    if (activeEvent) lastEventText = `${activeEvent.title}. ${activeEvent.desc || ''}`.trim();
+
     const resp = await fetch('/api/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -371,7 +369,7 @@ function renderDraftCards(container, data) {
         <div class="draft-platform-name plat-dot-${platform}">${m.label}</div>
         <div class="draft-card-actions">
           ${canvaBtn}
-          <button class="btn-regen" onclick="regenSingle('${platform}', this)">↺ Redo</button>
+          <button class="btn-regen" onclick="regenSingle('${platform}', this)">Regenerate</button>
           <button class="btn-copy" onclick="copyDraft(this)">Copy</button>
         </div>
       </div>
@@ -383,82 +381,103 @@ function renderDraftCards(container, data) {
 }
 
 async function regenSingle(platform, btn) {
-  if (!activeEvent) return;
-  const tone  = document.getElementById('genToneOverride').value.trim();
-  const card  = btn.closest('.draft-card');
-  const content = card.querySelector('.draft-content');
-  const origText = btn.textContent;
+  const card    = btn.closest('.draft-card');
+  const contentEl = card.querySelector('.draft-content');
 
-  btn.textContent = '…';
-  btn.disabled    = true;
-  content.style.opacity = '0.4';
+  btn.textContent   = '…';
+  btn.disabled      = true;
+  contentEl.style.opacity = '0.4';
+
+  // Use event_id if we have an active event, otherwise fall back to lastEventText
+  const toneEl  = document.getElementById('genToneOverride') || document.getElementById('genFreeformTone');
+  const tone    = toneEl ? toneEl.value.trim() : '';
+  const payload = activeEvent
+    ? { event_id: activeEvent.id, tone_override: tone, platforms: [platform] }
+    : { event_text: lastEventText, tone_override: tone, platforms: [platform] };
 
   try {
     const resp = await fetch('/api/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        event_id: activeEvent.id,
-        tone_override: tone,
-        platforms: [platform],
-      }),
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
     });
     const data = await resp.json();
-    if (!resp.ok) throw new Error(data.error);
+    if (!resp.ok) throw new Error(data.error || 'Generation failed');
     const newContent = data.drafts[platform];
-    content.textContent = newContent;
-    card.querySelector('.draft-char-count').textContent = `${newContent.length} chars`;
+    contentEl.textContent = newContent;
+    const cc = card.querySelector('.draft-char-count');
+    if (cc) cc.textContent = `${newContent.length} chars`;
   } catch (err) {
-    showToast('Redo failed: ' + err.message);
+    showToast('Regenerate failed: ' + err.message);
   }
 
-  btn.textContent       = origText;
-  btn.disabled          = false;
-  content.style.opacity = '1';
+  btn.textContent         = 'Regenerate';
+  btn.disabled            = false;
+  contentEl.style.opacity = '1';
 }
 
 // ── Copy to Clipboard ─────────────────────────────────────────────────────
+// Uses execCommand fallback — required when accessed via LAN IP (non-HTTPS)
+
+function _copyText(text) {
+  // Always use execCommand — works on HTTP LAN connections unlike navigator.clipboard
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;top:0;left:0;width:2em;height:2em;opacity:0.01;border:none;outline:none;';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try { document.execCommand('copy'); } catch (_) {}
+  document.body.removeChild(ta);
+}
+
+function _flashCopied(btn, originalLabel) {
+  btn.textContent = '✓ Copied!';
+  btn.classList.add('copied');
+  setTimeout(() => { btn.textContent = originalLabel; btn.classList.remove('copied'); }, 2000);
+}
 
 function copyDraft(btn) {
   const content = btn.closest('.draft-card').querySelector('.draft-content').textContent;
-  navigator.clipboard.writeText(content).then(() => {
-    btn.textContent = '✓ Copied!';
-    btn.classList.add('copied');
-    setTimeout(() => {
-      btn.textContent = 'Copy';
-      btn.classList.remove('copied');
-    }, 2000);
-  }).catch(() => {
-    // Fallback for older browsers
-    const ta = document.createElement('textarea');
-    ta.value = content;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    btn.textContent = '✓ Copied!';
-    btn.classList.add('copied');
-    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
-  });
+  _copyText(content);
+  _flashCopied(btn, 'Copy');
 }
 
 // ── Canva Design ──────────────────────────────────────────────────────────
 
 function designInCanva(platform, canvaType, btn) {
   const content = btn.closest('.draft-card').querySelector('.draft-content').textContent;
-  // Copy text first so they can paste it into Canva
-  navigator.clipboard.writeText(content).catch(() => {});
+  _copyText(content);
 
-  // Open Canva with the appropriate template type
   const urls = {
     facebook_post:  'https://www.canva.com/create/facebook-posts/',
     instagram_post: 'https://www.canva.com/create/instagram-posts/',
     flyer:          'https://www.canva.com/create/flyers/',
   };
   const url = urls[canvaType] || 'https://www.canva.com/';
-  window.open(url, '_blank');
 
-  showToast('Post text copied — paste it into your Canva design!');
+  // Use a real link element — avoids popup blockers
+  const a = document.createElement('a');
+  a.href = url; a.target = '_blank'; a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+
+  showToast('Text copied — paste it into your Canva design!');
+}
+
+function designInCanvaByPlatform(platform, content) {
+  _copyText(content);
+  const urls = {
+    facebook:  'https://www.canva.com/create/facebook-posts/',
+    instagram: 'https://www.canva.com/create/instagram-posts/',
+  };
+  const a = document.createElement('a');
+  a.href = urls[platform] || 'https://www.canva.com/';
+  a.target = '_blank'; a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  showToast('Text copied — paste it into your Canva design!');
 }
 
 // ── Platform Toggles ──────────────────────────────────────────────────────

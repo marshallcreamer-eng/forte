@@ -7,7 +7,7 @@ import calendar as cal_module
 import json, os, io
 
 from config import Config
-from models import db, User, Event, Draft
+from models import db, User, Event, Draft, Category
 
 
 PLATFORM_CONFIG = {
@@ -392,6 +392,76 @@ def create_app():
         drafts = Draft.query.filter_by(event_id=event_id).order_by(Draft.generated_at.desc()).all()
         return jsonify([d.to_dict() for d in drafts])
 
+    # ── Settings ───────────────────────────────────────────────────────────
+
+    @app.route('/settings')
+    @login_required
+    def settings():
+        categories = Category.query.order_by(Category.sort_order, Category.name).all()
+        tov_path   = os.path.join(app.root_path, 'data', 'tov_bpa.json')
+        tov        = {}
+        try:
+            with open(tov_path) as f:
+                tov = json.load(f)
+        except Exception:
+            pass
+        return render_template('settings.html', categories=categories, tov=tov)
+
+    # ── API: Categories CRUD ───────────────────────────────────────────────
+
+    @app.route('/api/categories', methods=['GET'])
+    @login_required
+    def api_categories_list():
+        cats = Category.query.order_by(Category.sort_order, Category.name).all()
+        return jsonify([c.to_dict() for c in cats])
+
+    @app.route('/api/categories', methods=['POST'])
+    @login_required
+    def api_create_category():
+        data = request.get_json(silent=True) or {}
+        name  = data.get('name', '').strip()
+        color = data.get('color', '#64748b').strip()
+        if not name:
+            return jsonify({'error': 'name is required'}), 400
+        slug = name.lower().replace(' ', '_').replace('&', 'and')
+        slug = ''.join(c for c in slug if c.isalnum() or c == '_')[:30]
+        if Category.query.filter_by(slug=slug).first():
+            slug = f"{slug}_{Category.query.count()}"
+        cat = Category(name=name, slug=slug, color=color, is_preset=False)
+        db.session.add(cat)
+        db.session.commit()
+        return jsonify(cat.to_dict()), 201
+
+    @app.route('/api/categories/<int:cat_id>', methods=['PUT'])
+    @login_required
+    def api_update_category(cat_id):
+        cat  = Category.query.get_or_404(cat_id)
+        data = request.get_json(silent=True) or {}
+        if 'name'  in data: cat.name  = data['name'].strip()
+        if 'color' in data: cat.color = data['color'].strip()
+        db.session.commit()
+        return jsonify(cat.to_dict())
+
+    @app.route('/api/categories/<int:cat_id>', methods=['DELETE'])
+    @login_required
+    def api_delete_category(cat_id):
+        cat = Category.query.get_or_404(cat_id)
+        if cat.is_preset:
+            return jsonify({'error': 'Cannot delete a preset category'}), 400
+        db.session.delete(cat)
+        db.session.commit()
+        return jsonify({'ok': True})
+
+    # ── Context processor — inject categories into all templates ───────────
+
+    @app.context_processor
+    def inject_categories():
+        try:
+            cats = Category.query.order_by(Category.sort_order).all()
+            return {'categories': cats, 'cat_colors': {c.slug: c.color for c in cats}}
+        except Exception:
+            return {'categories': [], 'cat_colors': {}}
+
     @app.route('/health')
     def health():
         return jsonify({'status': 'ok', 'app': 'Forte by Automatey'})
@@ -399,7 +469,7 @@ def create_app():
     # ── Init DB + Seed ─────────────────────────────────────────────────────────
 
     with app.app_context():
-        db.create_all()
+        db.create_all()   # creates categories table automatically
         _migrate_db(db)
         _seed_defaults()
 
@@ -484,6 +554,24 @@ def _generate_photo_brief(event_text, app):
     return resp.text.strip()
 
 
+def _seed_categories():
+    if Category.query.count() > 0:
+        return
+    presets = [
+        ('Community',          'community',  '#d97706', True,  1),
+        ('Academic',           'academic',   '#2563eb', True,  2),
+        ('Admissions',         'admissions', '#16a34a', True,  3),
+        ('Achievement',        'achievement','#7c3aed', True,  4),
+        ('Holiday',            'holiday',    '#ef4444', True,  5),
+        ('Sports & Activities','sports',     '#0891b2', True,  6),
+        ('Staff & Faculty',    'staff',      '#9333ea', True,  7),
+    ]
+    for name, slug, color, is_preset, sort_order in presets:
+        db.session.add(Category(name=name, slug=slug, color=color,
+                                is_preset=is_preset, sort_order=sort_order))
+    db.session.commit()
+
+
 def _seed_defaults():
     if not User.query.filter_by(email='admin@beltonprep.us').first():
         u = User(name='BPA Admin', email='admin@beltonprep.us', role='admin')
@@ -498,6 +586,7 @@ def _seed_defaults():
     if Event.query.count() == 0:
         _seed_events()
 
+    _seed_categories()
     db.session.commit()
 
 
