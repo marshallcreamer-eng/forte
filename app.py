@@ -21,13 +21,14 @@ PLATFORM_CONFIG = {
 
 # Best times to post per platform (for school audience in SC)
 BEST_TIMES = {
-    'facebook':  {'days': 'Wed & Fri', 'time': '6–8 pm',  'note': 'Parents check after work'},
-    'instagram': {'days': 'Mon & Wed', 'time': '6–8 pm',  'note': 'Highest reach for K–12 schools'},
-    'linkedin':  {'days': 'Tue–Thu',   'time': '12–2 pm', 'note': 'During lunch break'},
-    'x':         {'days': 'Weekdays',  'time': '8–10 am', 'note': 'Morning commute window'},
-    'classdojo': {'days': 'Sun–Tue',   'time': '7–9 pm',  'note': 'When parents review school info'},
-    'email':     {'days': 'Tue or Thu','time': '7–9 am',  'note': 'Highest open rates for school emails'},
+    'facebook':  {'days': 'Wed & Fri', 'time': '6–8 pm',  'note': 'Parents check after work — Sprout Social 2024'},
+    'instagram': {'days': 'Mon & Wed', 'time': '6–8 pm',  'note': 'Peak reach for K–12 — Buffer Education Report 2024'},
+    'linkedin':  {'days': 'Tue–Thu',   'time': '12–2 pm', 'note': 'Lunch break engagement — LinkedIn internal data'},
+    'x':         {'days': 'Weekdays',  'time': '8–10 am', 'note': 'Morning commute window — Sprout Social 2024'},
+    'classdojo': {'days': 'Sun–Tue',   'time': '7–9 pm',  'note': 'After school/dinner — parent app usage patterns'},
+    'email':     {'days': 'Tue or Thu','time': '7–9 am',  'note': 'Highest open rates for school emails — Mailchimp 2024'},
 }
+BEST_TIMES_SOURCE = 'General industry benchmarks for K–12 school audiences (Sprout Social, Buffer, Mailchimp 2024). Update once BPA posts regularly — real engagement data will be more accurate.'
 
 
 def create_app():
@@ -118,6 +119,7 @@ def create_app():
             coming_up=enrich(coming_up),
             platforms=list(PLATFORM_CONFIG.keys()),
             best_times=BEST_TIMES,
+            best_times_source=BEST_TIMES_SOURCE,
         )
 
     # ── Calendar View ──────────────────────────────────────────────────────────

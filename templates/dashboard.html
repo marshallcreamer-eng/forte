@@ -16,13 +16,22 @@
 
   <!-- ── Best Times Banner ───────────────────────────────────────────── -->
   <div class="best-times-bar">
-    <span class="bt-label">Best times to post:</span>
-    {% for platform, info in best_times.items() %}
-    <span class="bt-chip">
-      <span class="bt-platform">{{ platform|title if platform != 'classdojo' else 'ClassDojo' }}</span>
-      {{ info.days }} · {{ info.time }}
-    </span>
-    {% endfor %}
+    <div class="bt-header-row">
+      <span class="bt-label">Best times to post</span>
+      <span class="bt-source" title="{{ best_times_source }}">ⓘ Industry benchmarks — hover for source</span>
+    </div>
+    <div class="bt-chips-row">
+      {% set plat_labels = {'facebook': 'Facebook', 'instagram': 'Instagram', 'linkedin': 'LinkedIn', 'x': 'X / Twitter', 'classdojo': 'ClassDojo', 'email': 'Newsletter'} %}
+      {% for platform, info in best_times.items() %}
+      <div class="bt-chip" data-platform="{{ platform }}">
+        <div class="bt-chip-color"></div>
+        <div class="bt-chip-body">
+          <div class="bt-chip-platform">{{ plat_labels[platform] }}</div>
+          <div class="bt-chip-time">{{ info.days }} · {{ info.time }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
   </div>
 
   <!-- ── This Week ───────────────────────────────────────────────────── -->
@@ -136,65 +145,82 @@
 {% macro render_event_card(item, expanded) %}
 {% set ev = item.event %}
 {% set drafts = item.drafts %}
+{% set platforms = [
+  ('facebook',  'Facebook'),
+  ('instagram', 'Instagram'),
+  ('linkedin',  'LinkedIn'),
+  ('x',         'X / Twitter'),
+  ('classdojo', 'ClassDojo'),
+  ('email',     'Newsletter'),
+] %}
+{% set drafted_count  = drafts|length %}
+{% set posted_count   = drafts.values()|selectattr('status','eq','posted')|list|length %}
+
 <div class="event-card" id="ec-{{ ev.id }}">
-  <div class="ec-top">
-    <div class="ec-left">
+
+  <!-- Card header -->
+  <div class="ec-header">
+    <div class="ec-header-left">
       <span class="ec-cat {{ ev.category }}">{{ ev.category|title }}</span>
-      <h3 class="ec-title">{{ ev.title }}</h3>
-      <div class="ec-date">{{ ev.date.strftime('%A, %B %-d') }}</div>
-      {% if ev.description %}<p class="ec-desc">{{ ev.description }}</p>{% endif %}
+      <div class="ec-date-line">{{ ev.date.strftime('%A, %B %-d') }}</div>
     </div>
-    <div class="ec-right">
-      <button class="btn-gen-event" onclick="openEventFromDash({{ ev.id }}, {{ ev.title|tojson }}, {{ ev.description|tojson }}, '{{ ev.date.isoformat() }}', '{{ ev.category }}')">
-        ✦ Generate posts
+    <div class="ec-header-right">
+      {% if drafted_count > 0 %}
+        <span class="ec-summary">{{ drafted_count }}/6 drafted{% if posted_count %} · {{ posted_count }} posted{% endif %}</span>
+      {% endif %}
+      <button class="btn-gen-event"
+        onclick="openEventFromDash({{ ev.id }}, {{ ev.title|tojson }}, {{ ev.description|tojson }}, '{{ ev.date.isoformat() }}', '{{ ev.category }}')">
+        {% if drafted_count == 0 %}✦ Generate posts{% else %}↺ Regenerate{% endif %}
       </button>
     </div>
   </div>
 
-  <!-- Per-platform status row -->
-  <div class="ec-platforms">
-    {% set platform_meta = {
-      'facebook': {'icon': 'f', 'label': 'Facebook'},
-      'instagram': {'icon': '📷', 'label': 'Instagram'},
-      'linkedin': {'icon': 'in', 'label': 'LinkedIn'},
-      'x': {'icon': '𝕏', 'label': 'X'},
-      'classdojo': {'icon': '🏫', 'label': 'ClassDojo'},
-      'email': {'icon': '✉️', 'label': 'Newsletter'},
-    } %}
-    {% for platform, meta in platform_meta.items() %}
+  <!-- Title + description -->
+  <div class="ec-body">
+    <h3 class="ec-title">{{ ev.title }}</h3>
+    {% if ev.description %}<p class="ec-desc">{{ ev.description }}</p>{% endif %}
+  </div>
+
+  <!-- Platform status grid -->
+  <div class="ec-plat-grid">
+    {% for platform, label in platforms %}
     {% set draft = drafts.get(platform) %}
-    <div class="ec-plat" data-platform="{{ platform }}">
-      <span class="ec-plat-icon">{{ meta.icon }}</span>
-      <span class="ec-plat-name">{{ meta.label }}</span>
-      {% if draft %}
-        <span class="status-badge {{ draft.status }}" id="sb-{{ draft.id }}">
-          {% if draft.status == 'draft_ready' %}Draft ready
-          {% elif draft.status == 'scheduled' %}Scheduled
-          {% elif draft.status == 'posted' %}Posted ✓
+    <div class="ec-plat-item {{ draft.status if draft else 'needs_post' }}" data-platform="{{ platform }}">
+      <div class="ec-plat-dot"></div>
+      <div class="ec-plat-info">
+        <div class="ec-plat-label">{{ label }}</div>
+        <div class="ec-plat-status">
+          {% if draft %}
+            {% if draft.status == 'posted' %}Posted ✓
+            {% elif draft.status == 'draft_ready' %}Draft ready
+            {% elif draft.status == 'scheduled' %}Scheduled
+            {% else %}Needs post{% endif %}
           {% else %}Needs post{% endif %}
-        </span>
-        <div class="ec-plat-actions">
-          <button class="btn-copy-small" onclick="copyDraftById({{ draft.id }}, {{ draft.content|tojson }}, this)">Copy</button>
-          {% if platform in ('facebook', 'instagram') %}
-          <button class="btn-canva-small" onclick="designInCanvaByPlatform('{{ platform }}', {{ draft.content|tojson }})">Canva</button>
-          {% endif %}
-          <button class="btn-mark-posted" onclick="markPosted({{ draft.id }}, this)" {% if draft.status == 'posted' %}disabled{% endif %}>
-            {% if draft.status == 'posted' %}Posted{% else %}Mark posted{% endif %}
-          </button>
         </div>
-        {% if expanded and draft.photo_brief %}
-        <div class="ec-photo-brief">
-          <span class="photo-brief-icon">📷</span>
-          <span class="photo-brief-text">{{ draft.photo_brief }}</span>
-        </div>
+      </div>
+      {% if draft %}
+      <div class="ec-plat-btns">
+        <button class="btn-copy-small" onclick="copyDraftById({{ draft.id }}, {{ draft.content|tojson }}, this)">Copy</button>
+        {% if draft.status != 'posted' %}
+        <button class="btn-mark-posted" onclick="markPosted({{ draft.id }}, this)">✓</button>
         {% endif %}
-      {% else %}
-        <span class="status-badge needs_post">Needs post</span>
-        <button class="btn-gen-small" onclick="openEventFromDash({{ ev.id }}, {{ ev.title|tojson }}, {{ ev.description|tojson }}, '{{ ev.date.isoformat() }}', '{{ ev.category }}')">Generate</button>
+      </div>
       {% endif %}
     </div>
     {% endfor %}
   </div>
+
+  <!-- Photo brief (expanded / this week only) -->
+  {% if expanded %}
+    {% set any_brief = drafts.values()|selectattr('photo_brief')|list %}
+    {% if any_brief %}
+    <div class="ec-photo-brief">
+      <span class="photo-brief-label">📷 Photo brief</span>
+      <span class="photo-brief-text">{{ any_brief[0].photo_brief }}</span>
+    </div>
+    {% endif %}
+  {% endif %}
+
 </div>
 {% endmacro %}
 
