@@ -1226,6 +1226,54 @@ textarea.form-control { resize: vertical; }
 }
 .btn-view-cal:hover { background: #d5e1f5; }
 
+/* Content coverage bar */
+.coverage-bar {
+  background: var(--white); border: 1px solid var(--grey-border);
+  border-radius: 12px; padding: 16px 20px;
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 24px;
+}
+
+.coverage-left { flex: 1; }
+
+.coverage-numbers {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; margin-bottom: 10px; flex-wrap: wrap;
+}
+.coverage-has   { font-weight: 700; color: var(--navy); }
+.coverage-sep   { color: var(--grey-border); }
+.coverage-needs { font-weight: 700; color: var(--text-light); }
+.coverage-needs.warn { color: #b45309; }
+.coverage-total { font-size: 12px; color: var(--text-light); }
+
+.coverage-track {
+  height: 8px; background: var(--grey-bg);
+  border-radius: 4px; overflow: hidden;
+}
+.coverage-fill {
+  height: 100%; background: var(--navy);
+  border-radius: 4px; transition: width 0.6s ease;
+  min-width: 4px;
+}
+
+.coverage-right {
+  flex-shrink: 0; max-width: 280px;
+  display: flex; flex-direction: column; gap: 5px;
+}
+.coverage-gaps-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.3px; color: var(--text-light); margin-bottom: 2px;
+}
+.coverage-gap-link {
+  font-size: 12px; font-weight: 600; color: #b45309;
+  background: #fef3c7; padding: 3px 10px; border-radius: 6px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  display: block; transition: background 0.15s;
+}
+.coverage-gap-link:hover { background: #fde68a; }
+.coverage-all-good {
+  font-size: 12px; font-weight: 700; color: var(--green);
+}
+
 /* Best times banner */
 .best-times-bar {
   background: var(--navy); border-radius: 12px;

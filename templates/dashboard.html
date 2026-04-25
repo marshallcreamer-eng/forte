@@ -94,6 +94,36 @@
     <a href="{{ url_for('calendar_view') }}" class="btn-view-cal">View full calendar →</a>
   </div>
 
+  <!-- ── Content Coverage ─────────────────────────────────────────────── -->
+  <div class="coverage-bar">
+    <div class="coverage-left">
+      <div class="coverage-numbers">
+        <span class="coverage-has">{{ coverage.has_content }} event{{ 's' if coverage.has_content != 1 }} have content</span>
+        <span class="coverage-sep">·</span>
+        <span class="coverage-needs {% if coverage.needs_content > 0 %}warn{% endif %}">
+          {{ coverage.needs_content }} still need posts
+        </span>
+        <span class="coverage-sep">·</span>
+        <span class="coverage-total">{{ coverage.total }} upcoming total</span>
+      </div>
+      <div class="coverage-track">
+        <div class="coverage-fill" style="width: {{ coverage.pct }}%"></div>
+      </div>
+    </div>
+    <div class="coverage-right">
+      {% if coverage.gaps %}
+      <div class="coverage-gaps-label">Next up with no content:</div>
+      {% for ev in coverage.gaps %}
+      <a class="coverage-gap-link" href="{{ url_for('calendar_view', year=ev.date.year, month=ev.date.month) }}">
+        {{ ev.date.strftime('%b %-d') }} — {{ ev.title }}
+      </a>
+      {% endfor %}
+      {% else %}
+      <span class="coverage-all-good">✓ All upcoming events have content</span>
+      {% endif %}
+    </div>
+  </div>
+
   <!-- ── Best Times Banner ───────────────────────────────────────────── -->
   <div class="best-times-bar">
     <div class="bt-header-row">

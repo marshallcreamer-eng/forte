@@ -111,6 +111,21 @@ def create_app():
                 result.append({'event': ev, 'drafts': drafts_by_platform})
             return result
 
+        # ── Coverage stats ─────────────────────────────────────────────
+        # All upcoming events (from today through end of year)
+        upcoming_all = Event.query.filter(Event.date >= today).order_by(Event.date).all()
+        events_with_drafts    = [e for e in upcoming_all if e.drafts]
+        events_without_drafts = [e for e in upcoming_all if not e.drafts]
+
+        coverage = {
+            'total':        len(upcoming_all),
+            'has_content':  len(events_with_drafts),
+            'needs_content': len(events_without_drafts),
+            'pct': round(len(events_with_drafts) / len(upcoming_all) * 100) if upcoming_all else 0,
+            # Next 3 events with no content at all
+            'gaps': events_without_drafts[:3],
+        }
+
         return render_template('dashboard.html',
             today=today,
             week_start=today,
@@ -120,6 +135,7 @@ def create_app():
             platforms=list(PLATFORM_CONFIG.keys()),
             best_times=BEST_TIMES,
             best_times_source=BEST_TIMES_SOURCE,
+            coverage=coverage,
         )
 
     # ── Calendar View ──────────────────────────────────────────────────────────
