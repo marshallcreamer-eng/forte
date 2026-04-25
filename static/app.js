@@ -10,17 +10,22 @@ let importedEvents  = [];     // events waiting for review
 function openEventFromDash(id, title, desc, dateStr, category) {
   activeEvent = { id, title, desc, date: dateStr, category };
   const panel = document.getElementById('genPanel');
+
   document.getElementById('genTitle').textContent   = title;
   document.getElementById('genDate').textContent    = formatDate(dateStr);
   document.getElementById('genDesc').textContent    = desc || '';
   const catEl = document.getElementById('genCategory');
-  catEl.textContent = capFirst(category);
-  catEl.className   = `gen-event-category ${category}`;
-  document.getElementById('genResults').innerHTML  = '';
-  document.getElementById('genToneOverride').value = '';
-  document.getElementById('btnGenerate').disabled  = false;
-  document.getElementById('btnGenerate').textContent = 'Generate drafts';
-  panel.classList.add('open');
+  if (catEl) { catEl.textContent = capFirst(category); catEl.className = `gen-event-category ${category}`; }
+
+  const resultsEl = document.getElementById('genResults');
+  if (resultsEl) resultsEl.innerHTML = '';
+  const toneEl = document.getElementById('genToneOverride');
+  if (toneEl) toneEl.value = '';
+  const genBtn = document.getElementById('btnGenerate');
+  if (genBtn) { genBtn.disabled = false; genBtn.textContent = 'Generate drafts'; }
+
+  // On dashboard: slide panel open. On calendar: panel is always open.
+  if (panel) panel.classList.add('open');
 }
 
 function copyDraftById(draftId, content, btn) {

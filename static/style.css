@@ -311,13 +311,24 @@ a { color: inherit; text-decoration: none; }
 .cal-cell:not(.empty) { cursor: pointer; }
 .cal-cell:not(.empty):hover { background: #fafbff; }
 
-/* ── Generator Panel (always visible) ─────────────────────────────────── */
+/* ── Generator Panel ───────────────────────────────────────────────────── */
+/* Default: hidden (dashboard uses slide-in on event click) */
 .gen-panel {
-  width: 380px; min-width: 380px;
+  width: 0; min-width: 0;
   background: var(--white);
   border-left: 1px solid var(--grey-border);
+  overflow: hidden;
+  transition: width 0.25s ease, min-width 0.25s ease;
   display: flex; flex-direction: column;
   flex-shrink: 0;
+}
+.gen-panel.open { width: 420px; min-width: 420px; }
+
+/* Calendar: always open — panel is the permanent right column */
+.cal-layout .gen-panel {
+  width: 380px; min-width: 380px;
+  overflow: visible;
+  transition: none;
 }
 
 .gen-panel-inner {
@@ -908,6 +919,140 @@ textarea.form-control { resize: vertical; }
   text-align: center; margin-top: 20px;
   font-size: 11px; color: rgba(255,255,255,0.2);
 }
+
+/* ── Insights Page ─────────────────────────────────────────────────────── */
+.insights-wrap { max-width: 900px; margin: 0 auto; padding: 32px 24px; }
+
+.insights-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 24px; gap: 16px;
+}
+.insights-title    { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 900; color: var(--navy); margin-bottom: 4px; }
+.insights-subtitle { font-size: 13px; color: var(--text-light); line-height: 1.6; max-width: 520px; }
+
+.insights-actions { display: flex; gap: 10px; flex-shrink: 0; }
+
+.btn-run-scrape {
+  padding: 9px 18px; background: var(--navy); color: var(--white);
+  border: none; border-radius: 8px; font-size: 13px; font-weight: 700;
+  cursor: pointer; font-family: 'Inter', sans-serif; transition: background 0.15s;
+}
+.btn-run-scrape:hover    { background: var(--navy-mid); }
+.btn-run-scrape:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btn-upload-insight {
+  padding: 9px 16px; background: var(--white); color: var(--navy);
+  border: 1.5px solid var(--grey-border); border-radius: 8px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  font-family: 'Inter', sans-serif; transition: all 0.15s;
+}
+.btn-upload-insight:hover { border-color: var(--navy); background: var(--navy-light); }
+
+/* Running state */
+.insights-running {
+  display: flex; align-items: center; gap: 16px;
+  background: var(--navy); color: var(--white);
+  border-radius: 12px; padding: 18px 20px; margin-bottom: 24px;
+}
+.run-spinner {
+  width: 28px; height: 28px; flex-shrink: 0;
+  border: 3px solid rgba(255,255,255,0.2);
+  border-top-color: var(--gold);
+  border-radius: 50%; animation: spin 0.8s linear infinite;
+}
+.run-title { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+.run-sub   { font-size: 12px; color: rgba(255,255,255,0.5); }
+
+/* Empty state */
+.insights-empty { text-align: center; padding: 60px 24px; }
+.insights-empty-icon  { font-size: 40px; margin-bottom: 12px; }
+.insights-empty-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--navy); margin-bottom: 8px; }
+.insights-empty-sub   { font-size: 13px; color: var(--text-light); line-height: 1.7; max-width: 480px; margin: 0 auto; }
+
+/* AI narrative */
+.insights-narrative {
+  background: var(--navy-light); border: 1px solid #c7d8f0;
+  border-radius: 12px; padding: 18px 20px; margin-bottom: 24px;
+}
+.narrative-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--navy); margin-bottom: 8px; }
+.narrative-body  { font-size: 13px; color: var(--text-mid); line-height: 1.8; white-space: pre-line; }
+
+/* Section title */
+.insights-section-title {
+  font-size: 13px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.4px; color: var(--text-light);
+  margin-bottom: 12px; display: flex; align-items: center; gap: 10px;
+}
+.insights-section-badge {
+  font-size: 10px; font-weight: 700; padding: 2px 9px;
+  background: var(--green-light); color: var(--green);
+  border-radius: 10px; text-transform: none; letter-spacing: 0;
+}
+
+/* Overview cards */
+.insights-cards {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;
+}
+.ins-card {
+  background: var(--white); border: 1px solid var(--grey-border);
+  border-radius: 12px; padding: 16px 14px; text-align: center;
+}
+.ins-card.highlight { border-color: var(--navy); background: var(--navy-light); }
+.ins-card-value { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 900; color: var(--navy); line-height: 1; margin-bottom: 6px; }
+.ins-card-label { font-size: 11px; font-weight: 700; color: var(--text-mid); }
+.ins-card-sub   { font-size: 10px; color: var(--text-light); margin-top: 3px; }
+
+/* Best times */
+.insights-best-times { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.ins-best-card { border-radius: 12px; padding: 20px; }
+.ins-best-card.navy { background: var(--navy); color: var(--white); }
+.ins-best-card.gold { background: var(--gold); color: var(--navy); }
+.ins-best-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.6; margin-bottom: 8px; }
+.ins-best-value { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 900; line-height: 1; margin-bottom: 6px; }
+.ins-best-sub   { font-size: 12px; opacity: 0.6; }
+
+/* Day chart */
+.insights-day-chart { display: flex; flex-direction: column; gap: 6px; }
+.day-bar-row    { display: flex; align-items: center; gap: 10px; }
+.day-bar-label  { font-size: 12px; font-weight: 600; color: var(--text-mid); width: 30px; }
+.day-bar-track  { flex: 1; height: 10px; background: var(--grey-bg); border-radius: 5px; overflow: hidden; }
+.day-bar-fill   { height: 100%; background: var(--navy-light); border-radius: 5px; transition: width 0.6s ease; }
+.day-bar-fill.best { background: var(--navy); }
+.day-bar-val    { font-size: 11px; color: var(--text-light); width: 32px; text-align: right; }
+
+/* Two-column layout */
+.insights-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.insights-block { background: var(--white); border: 1px solid var(--grey-border); border-radius: 12px; padding: 20px; }
+
+/* Content mix */
+.content-mix-list { display: flex; flex-direction: column; gap: 10px; }
+.mix-row      { display: flex; align-items: center; gap: 10px; }
+.mix-label    { font-size: 12px; font-weight: 600; color: var(--text-mid); width: 80px; }
+.mix-bar-track{ flex: 1; height: 8px; background: var(--grey-bg); border-radius: 4px; overflow: hidden; }
+.mix-bar-fill { height: 100%; border-radius: 4px; }
+.mix-pct      { font-size: 11px; color: var(--text-light); width: 32px; text-align: right; }
+
+/* Monthly chart */
+.monthly-chart {
+  display: flex; align-items: flex-end; gap: 6px; height: 100px;
+}
+.month-col   { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+.month-bar   { width: 100%; background: var(--navy-light); border-radius: 3px 3px 0 0; min-height: 4px; }
+.month-label { font-size: 9px; color: var(--text-light); }
+
+/* Top posts */
+.top-posts-list { display: flex; flex-direction: column; gap: 8px; }
+.top-post-row {
+  display: flex; align-items: flex-start; gap: 14px;
+  background: var(--white); border: 1px solid var(--grey-border);
+  border-radius: 10px; padding: 14px 16px;
+}
+.top-post-rank { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 900; color: var(--navy-light); flex-shrink: 0; line-height: 1; width: 24px; text-align: center; }
+.top-post-body { flex: 1; }
+.top-post-text { font-size: 13px; color: var(--text-mid); line-height: 1.6; margin-bottom: 4px; }
+.top-post-date { font-size: 11px; color: var(--text-light); }
+.top-post-stats { display: flex; flex-direction: column; gap: 3px; flex-shrink: 0; }
+.top-stat { font-size: 11px; color: var(--text-light); white-space: nowrap; }
 
 /* ── Settings Page ─────────────────────────────────────────────────────── */
 .settings-wrap { max-width: 780px; margin: 0 auto; padding: 32px 24px; }

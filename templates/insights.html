@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+{% block title %}Insights{% endblock %}
+
+{% block content %}
+<div class="insights-wrap">
+
+  <!-- Header -->
+  <div class="insights-header">
+    <div>
+      <h1 class="insights-title">Post Insights</h1>
+      <div class="insights-subtitle">
+        Analysis of BPA's actual Facebook posts — real engagement data for your school.
+        {% if latest %}
+          Last analysed <strong>{{ latest.started_at.strftime('%B %-d, %Y') }}</strong>
+          from <strong>{{ latest.post_count }} posts</strong>.
+        {% endif %}
+      </div>
+    </div>
+    <div class="insights-actions">
+      <button class="btn-run-scrape" id="btnRunScrape" onclick="runScrape()">
+        {% if running %}⏳ Scraping…{% else %}↻ Run new analysis{% endif %}
+      </button>
+      <label class="btn-upload-insight" title="Upload exported JSON post data manually">
+        ↑ Upload post data
+        <input type="file" id="uploadPostsInput" accept=".json" style="display:none"
+               onchange="uploadPosts(this)">
+      </label>
+    </div>
+  </div>
+
+  <!-- Running state -->
+  <div class="insights-running" id="insightsRunning" {% if not running %}style="display:none"{% endif %}>
+    <div class="run-spinner"></div>
+    <div>
+      <div class="run-title">Scraping BPA's Facebook page…</div>
+      <div class="run-sub">This takes 2–3 minutes. You can navigate away and come back.</div>
+    </div>
+  </div>
+
+  {% if not latest and not running %}
+  <!-- Empty state -->
+  <div class="insights-empty">
+    <div class="insights-empty-icon">📊</div>
+    <div class="insights-empty-title">No data yet</div>
+    <div class="insights-empty-sub">
+      Click <strong>Run new analysis</strong> to scrape BPA's public Facebook posts and
+      generate real engagement insights for your school.<br><br>
+      If the scraper is blocked, use <strong>Upload post data</strong> — export your posts
+      from <em>Facebook Business Suite → Posts → Export</em> and upload the JSON file.
+    </div>
+  </div>
+  {% endif %}
+
+  {% if latest %}
+  {% set r = latest.results_dict() %}
+
+  <!-- AI Narrative -->
+  {% if latest.narrative %}
+  <div class="insights-narrative">
+    <div class="narrative-label">AI Summary</div>
+    <div class="narrative-body">{{ latest.narrative }}</div>
+  </div>
+  {% endif %}
+
+  <!-- Overview cards -->
+  <div class="insights-section-title">Overview · Facebook</div>
+  <div class="insights-cards">
+    <div class="ins-card">
+      <div class="ins-card-value">{{ r.total_posts or '—' }}</div>
+      <div class="ins-card-label">Posts analysed</div>
+      <div class="ins-card-sub">{{ r.date_from }} – {{ r.date_to }}</div>
+    </div>
+    <div class="ins-card highlight">
+      <div class="ins-card-value">{{ r.avg_engagement or '—' }}</div>
+      <div class="ins-card-label">Avg. engagement per post</div>
+      <div class="ins-card-sub">likes + comments + shares</div>
+    </div>
+    <div class="ins-card">
+      <div class="ins-card-value">{{ r.avg_likes or '—' }}</div>
+      <div class="ins-card-label">Avg. likes</div>
+    </div>
+    <div class="ins-card">
+      <div class="ins-card-value">{{ r.avg_comments or '—' }}</div>
+      <div class="ins-card-label">Avg. comments</div>
+    </div>
+    <div class="ins-card">
+      <div class="ins-card-value">{{ r.avg_shares or '—' }}</div>
+      <div class="ins-card-label">Avg. shares</div>
+    </div>
+  </div>
+
+  <!-- Best times — now BPA-specific -->
+  <div class="insights-section-title" style="margin-top:28px">
+    Best times to post
+    <span class="insights-section-badge">Based on BPA's actual data</span>
+  </div>
+  <div class="insights-best-times">
+    <div class="ins-best-card navy">
+      <div class="ins-best-label">Best day</div>
+      <div class="ins-best-value">{{ r.best_day or '—' }}</div>
+      <div class="ins-best-sub">Highest avg. engagement</div>
+    </div>
+    <div class="ins-best-card gold">
+      <div class="ins-best-label">Best time</div>
+      <div class="ins-best-value">{{ r.best_hour or '—' }}</div>
+      <div class="ins-best-sub">Most active hour (UTC)</div>
+    </div>
+  </div>
+
+  <!-- Day breakdown bar chart -->
+  {% if r.day_breakdown %}
+  <div class="insights-day-chart">
+    {% set max_val = r.day_breakdown.values()|max %}
+    {% for day, val in r.day_breakdown.items() %}
+    <div class="day-bar-row">
+      <div class="day-bar-label">{{ day[:3] }}</div>
+      <div class="day-bar-track">
+        <div class="day-bar-fill {% if day == r.best_day %}best{% endif %}"
+             style="width: {{ ((val / max_val) * 100)|round }}%"></div>
+      </div>
+      <div class="day-bar-val">{{ val }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Content mix + monthly trend side by side -->
+  <div class="insights-two-col" style="margin-top:28px">
+
+    <!-- Content breakdown -->
+    {% if r.content_mix %}
+    <div class="insights-block">
+      <div class="insights-section-title">Content breakdown</div>
+      <div class="content-mix-list">
+        {% set mix_colors = {'Photo': '#1877F2', 'Video': '#E1306C', 'Text only': '#64748b'} %}
+        {% for type, pct in r.content_mix.items() %}
+        <div class="mix-row">
+          <div class="mix-label">{{ type }}</div>
+          <div class="mix-bar-track">
+            <div class="mix-bar-fill" style="width:{{ pct }}%; background:{{ mix_colors.get(type, '#64748b') }}"></div>
+          </div>
+          <div class="mix-pct">{{ pct }}%</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Monthly trend -->
+    {% if r.monthly_trend %}
+    <div class="insights-block">
+      <div class="insights-section-title">Monthly posts</div>
+      <div class="monthly-chart">
+        {% set max_mp = r.monthly_trend.values()|map(attribute='posts')|max %}
+        {% for month, data in r.monthly_trend.items() %}
+        <div class="month-col" title="{{ data.posts }} posts in {{ month }}">
+          <div class="month-bar" style="height: {{ ((data.posts / max_mp) * 80)|round }}px"></div>
+          <div class="month-label">{{ month[5:] }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- Top posts -->
+  {% if r.top_posts %}
+  <div style="margin-top:28px">
+    <div class="insights-section-title">Top 5 posts by engagement</div>
+    <div class="top-posts-list">
+      {% for post in r.top_posts %}
+      <div class="top-post-row">
+        <div class="top-post-rank">{{ loop.index }}</div>
+        <div class="top-post-body">
+          <div class="top-post-text">{{ post.text or '(no text)' }}</div>
+          <div class="top-post-date">{{ post.date }}</div>
+        </div>
+        <div class="top-post-stats">
+          <span class="top-stat">👍 {{ post.likes }}</span>
+          <span class="top-stat">💬 {{ post.comments }}</span>
+          <span class="top-stat">↗ {{ post.shares }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% endif %}{# /if latest #}
+
+</div>
+
+<div class="toast" id="toast"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let pollInterval = null;
+
+async function runScrape() {
+  const btn = document.getElementById('btnRunScrape');
+  btn.disabled = true; btn.textContent = '⏳ Starting…';
+  try {
+    const resp = await fetch('/api/insights/run', { method: 'POST' });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error);
+    document.getElementById('insightsRunning').style.display = 'flex';
+    startPolling();
+  } catch (e) {
+    btn.disabled = false; btn.textContent = '↻ Run new analysis';
+    showToast('Error: ' + e.message);
+  }
+}
+
+function startPolling() {
+  if (pollInterval) return;
+  pollInterval = setInterval(async () => {
+    const resp = await fetch('/api/insights/status');
+    const data = await resp.json();
+    if (!data.running) {
+      clearInterval(pollInterval); pollInterval = null;
+      location.reload();
+    }
+  }, 5000);
+}
+
+async function uploadPosts(input) {
+  const file = input.files[0]; if (!file) return;
+  const fd = new FormData(); fd.append('file', file);
+  showToast('Analysing uploaded posts…');
+  try {
+    const resp = await fetch('/api/insights/upload', { method: 'POST', body: fd });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error);
+    showToast(`Analysed ${data.post_count} posts — reloading…`);
+    setTimeout(() => location.reload(), 1200);
+  } catch (e) { showToast('Error: ' + e.message); }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 4000);
+}
+
+// Auto-poll if a scrape is already running on page load
+{% if running %}startPolling();{% endif %}
+</script>
+{% endblock %}

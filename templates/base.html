@@ -45,6 +45,10 @@
          class="f-nav-link {% if request.endpoint == 'calendar_view' %}active{% endif %}">
         Calendar
       </a>
+      <a href="{{ url_for('insights') }}"
+         class="f-nav-link {% if request.endpoint == 'insights' %}active{% endif %}">
+        Insights
+      </a>
       <a href="{{ url_for('settings') }}"
          class="f-nav-link {% if request.endpoint == 'settings' %}active{% endif %}">
         Settings

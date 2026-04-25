@@ -90,6 +90,23 @@ class Category(db.Model):
         }
 
 
+class InsightRun(db.Model):
+    __tablename__ = 'insight_runs'
+    id          = db.Column(db.Integer, primary_key=True)
+    platform    = db.Column(db.String(20), default='facebook')
+    status      = db.Column(db.String(20), default='pending')  # pending|running|done|failed
+    started_at  = db.Column(db.DateTime, default=datetime.utcnow)
+    finished_at = db.Column(db.DateTime)
+    post_count  = db.Column(db.Integer, default=0)
+    results     = db.Column(db.Text)   # JSON analysis output
+    narrative   = db.Column(db.Text)   # AI bullet points
+    error       = db.Column(db.Text)
+
+    def results_dict(self):
+        try: return json.loads(self.results or '{}')
+        except: return {}
+
+
 class Draft(db.Model):
     __tablename__ = 'drafts'
     id            = db.Column(db.Integer, primary_key=True)

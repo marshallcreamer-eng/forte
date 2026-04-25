@@ -7,7 +7,7 @@ import calendar as cal_module
 import json, os, io
 
 from config import Config
-from models import db, User, Event, Draft, Category
+from models import db, User, Event, Draft, Category, InsightRun
 
 
 PLATFORM_CONFIG = {
@@ -391,6 +391,108 @@ def create_app():
     def api_get_drafts(event_id):
         drafts = Draft.query.filter_by(event_id=event_id).order_by(Draft.generated_at.desc()).all()
         return jsonify([d.to_dict() for d in drafts])
+
+    # ── Insights ───────────────────────────────────────────────────────────
+
+    @app.route('/insights')
+    @login_required
+    def insights():
+        latest  = InsightRun.query.filter_by(status='done').order_by(
+            InsightRun.started_at.desc()).first()
+        running = InsightRun.query.filter_by(status='running').first()
+        return render_template('insights.html', latest=latest, running=running)
+
+    @app.route('/api/insights/run', methods=['POST'])
+    @login_required
+    def api_insights_run():
+        if InsightRun.query.filter_by(status='running').first():
+            return jsonify({'error': 'A scrape is already running'}), 409
+
+        run = InsightRun(status='running', platform='facebook')
+        db.session.add(run)
+        db.session.commit()
+        run_id = run.id
+
+        import threading
+        def _scrape():
+            with app.app_context():
+                r = InsightRun.query.get(run_id)
+                try:
+                    from scraper import scrape_facebook, analyse_facebook, ai_narrative
+                    cookies = os.path.join(app.root_path, 'data', 'fb_cookies.txt')
+                    posts   = scrape_facebook('beltonprep', max_posts=200,
+                                              cookies_txt=cookies if os.path.exists(cookies) else None)
+                    metrics = analyse_facebook(posts)
+                    narr    = ai_narrative(metrics, 'Belton Preparatory Academy',
+                                          app.config['GEMINI_API_KEY']) if metrics else None
+                    r.status     = 'done'
+                    r.post_count = len(posts)
+                    r.results    = json.dumps(metrics)
+                    r.narrative  = narr
+                    r.finished_at = datetime.utcnow()
+                except Exception as exc:
+                    r.status = 'failed'
+                    r.error  = str(exc)
+                    r.finished_at = datetime.utcnow()
+                db.session.commit()
+
+        threading.Thread(target=_scrape, daemon=True).start()
+        return jsonify({'ok': True, 'run_id': run_id})
+
+    @app.route('/api/insights/status', methods=['GET'])
+    @login_required
+    def api_insights_status():
+        running = InsightRun.query.filter_by(status='running').first()
+        latest  = InsightRun.query.filter_by(status='done').order_by(
+            InsightRun.started_at.desc()).first()
+        return jsonify({
+            'running':      running is not None,
+            'latest_id':    latest.id if latest else None,
+            'latest_date':  latest.started_at.strftime('%b %d, %Y %H:%M') if latest else None,
+            'post_count':   latest.post_count if latest else 0,
+        })
+
+    @app.route('/api/insights/upload', methods=['POST'])
+    @login_required
+    def api_insights_upload():
+        """Accept manually exported JSON post data as fallback if scraping is blocked."""
+        if 'file' not in request.files:
+            return jsonify({'error': 'no file'}), 400
+        f    = request.files['file']
+        try:
+            posts = json.loads(f.read().decode('utf-8'))
+            if not isinstance(posts, list):
+                return jsonify({'error': 'expected a JSON array of posts'}), 400
+        except Exception as exc:
+            return jsonify({'error': f'could not parse file: {exc}'}), 400
+
+        from scraper import analyse_facebook, ai_narrative
+        # Normalise common export formats
+        normalised = []
+        for p in posts:
+            normalised.append({
+                'text':      p.get('text') or p.get('message') or '',
+                'time':      p.get('time') or p.get('created_time') or p.get('timestamp') or '',
+                'likes':     p.get('likes') or p.get('like_count') or 0,
+                'comments':  p.get('comments') or p.get('comment_count') or 0,
+                'shares':    p.get('shares') or p.get('share_count') or 0,
+                'has_image': bool(p.get('image') or p.get('attachments') or p.get('media')),
+                'has_video': bool(p.get('video') or p.get('is_video')),
+            })
+
+        metrics = analyse_facebook(normalised)
+        narr    = ai_narrative(metrics, 'Belton Preparatory Academy', app.config['GEMINI_API_KEY']) if metrics else None
+
+        run = InsightRun(
+            status='done', platform='facebook',
+            post_count=len(normalised),
+            results=json.dumps(metrics),
+            narrative=narr,
+            finished_at=datetime.utcnow(),
+        )
+        db.session.add(run)
+        db.session.commit()
+        return jsonify({'ok': True, 'post_count': len(normalised)})
 
     # ── Settings ───────────────────────────────────────────────────────────
 
