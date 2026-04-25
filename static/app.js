@@ -67,12 +67,103 @@ function designInCanvaByPlatform(platform, content) {
 // ── Event Panel ───────────────────────────────────────────────────────────
 
 function showEmptyState() {
-  document.getElementById('genEmptyState')  && (document.getElementById('genEmptyState').style.display  = '');
-  document.getElementById('genEventState')  && (document.getElementById('genEventState').style.display  = 'none');
+  ['genEmptyState','genEventState','genDayState'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = id === 'genEmptyState' ? '' : 'none';
+  });
   activeEvent = null;
 }
 
-function openEvent(el) {
+// ── Day click ─────────────────────────────────────────────────────────────
+
+function openDay(evt, cell) {
+  // Only fire on the cell background, not on event chips (they stopPropagation)
+  const dateStr = cell.dataset.date;
+  if (!dateStr) return;
+
+  const eventChips = cell.querySelectorAll('.cal-event');
+  const friendlyDate = formatDate(dateStr);
+
+  // Populate day header
+  document.getElementById('genDayDate').textContent = friendlyDate;
+  document.getElementById('genDaySub').textContent  = eventChips.length
+    ? `${eventChips.length} event${eventChips.length > 1 ? 's' : ''} on this day — click one to view its content`
+    : 'Nothing scheduled — let\'s create something';
+
+  // Populate event list
+  const container = document.getElementById('genDayEvents');
+  container.innerHTML = '';
+  const divider = document.getElementById('genDayDivider');
+
+  if (eventChips.length) {
+    eventChips.forEach(chip => {
+      const row = document.createElement('div');
+      row.className = 'gen-day-event-row';
+      row.innerHTML = `
+        <div>
+          <div class="gen-day-event-name">${escHtml(chip.dataset.title)}</div>
+        </div>
+        <span class="gen-day-event-cat ${chip.dataset.category}">${capFirst(chip.dataset.category)}</span>`;
+      row.onclick = () => openEvent(chip);
+      container.appendChild(row);
+    });
+    divider.style.display = '';
+  } else {
+    divider.style.display = 'none';
+  }
+
+  // Pre-fill freeform placeholder with the date
+  const ta = document.getElementById('genDayFreeformText');
+  if (ta) {
+    ta.value = '';
+    ta.placeholder = `What's happening at BPA on ${friendlyDate.split(',')[0]}?`;
+  }
+
+  // Clear previous results
+  const results = document.getElementById('genDayFreeformResults');
+  if (results) results.innerHTML = '';
+
+  // Switch to day state
+  ['genEmptyState','genEventState'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
+  const dayState = document.getElementById('genDayState');
+  if (dayState) dayState.style.display = '';
+}
+
+async function generateDayFreeform() {
+  const text = document.getElementById('genDayFreeformText')?.value.trim();
+  if (!text) { showToast('Describe what\'s happening first.'); return; }
+
+  const platforms = Array.from(
+    document.querySelectorAll('#dayFreeformPlatGrid .plat-card.active input')
+  ).map(cb => cb.value);
+  if (!platforms.length) { showToast('Select at least one platform.'); return; }
+
+  const tone    = document.getElementById('genDayFreeformTone')?.value.trim();
+  const btn     = document.getElementById('btnDayFreeformGenerate');
+  const results = document.getElementById('genDayFreeformResults');
+
+  btn.disabled = true; btn.textContent = 'Generating…';
+  results.innerHTML = `<div class="gen-loading"><div class="gen-spinner"></div><div class="gen-loading-text">Writing in BPA's tone of voice…</div></div>`;
+
+  try {
+    const resp = await fetch('/api/generate', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event_text: text, tone_override: tone, platforms }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error);
+    renderDraftCards(results, data);
+  } catch (err) {
+    results.innerHTML = `<div style="color:var(--red);padding:16px;font-size:13px;">Error: ${err.message}</div>`;
+  }
+  btn.disabled = false; btn.textContent = 'Generate posts';
+}
+
+// ── Event click (with existing drafts) ───────────────────────────────────
+
+async function openEvent(el) {
   activeEvent = {
     id:       parseInt(el.dataset.id),
     title:    el.dataset.title,
@@ -91,13 +182,63 @@ function openEvent(el) {
   document.getElementById('genResults').innerHTML   = '';
   document.getElementById('genToneOverride').value  = '';
   document.getElementById('btnGenerate').disabled   = false;
-  document.getElementById('btnGenerate').textContent = 'Generate drafts';
+  document.getElementById('btnGenerate').textContent = 'Generate new drafts';
 
   // Switch to event state
-  const empty = document.getElementById('genEmptyState');
-  const event = document.getElementById('genEventState');
-  if (empty) empty.style.display = 'none';
-  if (event) event.style.display = '';
+  ['genEmptyState','genDayState'].forEach(id => {
+    const el2 = document.getElementById(id); if (el2) el2.style.display = 'none';
+  });
+  const eventState = document.getElementById('genEventState');
+  if (eventState) eventState.style.display = '';
+
+  // Fetch and show existing drafts
+  const existingEl = document.getElementById('genExistingDrafts');
+  if (existingEl) {
+    existingEl.innerHTML = '<div class="gen-loading" style="padding:12px 0"><div class="gen-spinner" style="width:20px;height:20px;border-width:2px"></div></div>';
+    try {
+      const resp = await fetch(`/api/drafts/${activeEvent.id}`);
+      const drafts = await resp.json();
+      if (drafts.length) {
+        renderExistingDrafts(existingEl, drafts);
+        const lbl = document.getElementById('genNewDraftLabel');
+        if (lbl) lbl.textContent = 'Generate new drafts';
+      } else {
+        existingEl.innerHTML = '';
+      }
+    } catch (_) { existingEl.innerHTML = ''; }
+  }
+}
+
+function renderExistingDrafts(container, drafts) {
+  const platformLabels = { facebook:'Facebook', instagram:'Instagram', linkedin:'LinkedIn', x:'X / Twitter', classdojo:'ClassDojo', email:'Newsletter' };
+  const statusLabels   = { draft_ready:'Draft ready', posted:'Posted ✓', scheduled:'Scheduled', needs_post:'Needs post' };
+
+  container.innerHTML = `<div class="gen-existing-header">Previously generated</div>`;
+
+  // Group by platform, keep latest
+  const byPlatform = {};
+  drafts.forEach(d => { if (!byPlatform[d.platform]) byPlatform[d.platform] = d; });
+
+  const order = ['facebook','instagram','linkedin','x','classdojo','email'];
+  order.filter(p => byPlatform[p]).forEach(platform => {
+    const d = byPlatform[platform];
+    const div = document.createElement('div');
+    div.className = 'gen-existing-draft';
+    div.innerHTML = `
+      <div class="gen-existing-top">
+        <div class="gen-existing-platform">
+          <span style="width:8px;height:8px;border-radius:50%;background:var(--dot-${platform}, #888);display:inline-block"></span>
+          ${platformLabels[platform] || platform}
+        </div>
+        <span class="gen-existing-status status-badge ${d.status}">${statusLabels[d.status] || d.status}</span>
+      </div>
+      <div class="gen-existing-content">${escHtml(d.content)}</div>
+      <div class="gen-existing-actions">
+        <button class="btn-copy-small" onclick="copyDraftById(${d.id}, ${JSON.stringify(d.content)}, this)">Copy</button>
+        ${d.status !== 'posted' ? `<button class="btn-mark-posted" onclick="markPosted(${d.id}, this)">✓ Mark posted</button>` : ''}
+      </div>`;
+    container.appendChild(div);
+  });
 }
 
 function closePanel() {
@@ -355,13 +496,25 @@ function openEditModal() {
 
 function closeEventModal() {
   document.getElementById('eventModalOverlay').classList.remove('open');
+  const customInput = document.getElementById('evCategoryCustom');
+  if (customInput) { customInput.style.display = 'none'; customInput.value = ''; }
+}
+
+function toggleCustomCategory(select) {
+  const customInput = document.getElementById('evCategoryCustom');
+  if (!customInput) return;
+  customInput.style.display = select.value === 'custom' ? '' : 'none';
+  if (select.value === 'custom') customInput.focus();
 }
 
 async function saveEvent() {
   const id    = document.getElementById('editEventId').value;
   const title = document.getElementById('evTitle').value.trim();
   const date  = document.getElementById('evDate').value;
-  const cat   = document.getElementById('evCategory').value;
+  const selectEl = document.getElementById('evCategory');
+  const cat   = selectEl.value === 'custom'
+    ? (document.getElementById('evCategoryCustom')?.value.trim().toLowerCase().replace(/\s+/g,'_') || 'community')
+    : selectEl.value;
   const desc  = document.getElementById('evDesc').value.trim();
 
   if (!title || !date) { showToast('Title and date are required.'); return; }

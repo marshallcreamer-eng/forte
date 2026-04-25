@@ -48,7 +48,10 @@
               <div class="cal-cell empty"></div>
             {% else %}
               {% set is_today = (year == today.year and month == today.month and day == today.day) %}
-              <div class="cal-cell {% if is_today %}today{% endif %}" data-day="{{ day }}">
+              {% set date_str = '%04d-%02d-%02d'|format(year, month, day) %}
+              <div class="cal-cell {% if is_today %}today{% endif %}"
+                   data-day="{{ day }}" data-date="{{ date_str }}"
+                   onclick="openDay(event, this)">
                 <div class="cal-day-num {% if is_today %}today-num{% endif %}">{{ day }}</div>
                 {% if day in events_by_day %}
                   {% for ev in events_by_day[day] %}
@@ -58,7 +61,7 @@
                          data-desc="{{ ev.description | e }}"
                          data-date="{{ ev.date.isoformat() }}"
                          data-category="{{ ev.category }}"
-                         onclick="openEvent(this)"
+                         onclick="event.stopPropagation(); openEvent(this)"
                          title="{{ ev.title }}">
                       {{ ev.title }}
                     </div>
@@ -106,6 +109,36 @@
         <div class="gen-results" id="genFreeformResults"></div>
       </div>
 
+      <!-- ── Day state (shown when day cell clicked) ──────────────────── -->
+      <div id="genDayState" style="display:none">
+        <button class="gen-back" onclick="showEmptyState()">← Back</button>
+        <div class="gen-day-header">
+          <div class="gen-day-date" id="genDayDate"></div>
+          <div class="gen-day-sub" id="genDaySub"></div>
+        </div>
+        <div id="genDayEvents"></div>
+        <div class="gen-day-divider" id="genDayDivider"></div>
+        <div class="gen-freeform-box" style="margin-top:0">
+          <label class="gen-section-label">Something else happening?</label>
+          <textarea class="gen-freeform-input" id="genDayFreeformText" rows="3"
+            placeholder="Describe something happening at BPA…"></textarea>
+          <div class="gen-tone-row" style="margin-top:10px">
+            <label class="gen-tone-label">Tone override <span class="gen-tone-hint">(optional)</span></label>
+            <input type="text" class="gen-tone-input" id="genDayFreeformTone" placeholder="e.g. excited, for parents">
+          </div>
+          <div class="plat-grid" id="dayFreeformPlatGrid">
+            <label class="plat-card active" data-platform="facebook"><input type="checkbox" value="facebook" checked><span class="plat-card-name">Facebook</span><span class="plat-card-tick">✓</span></label>
+            <label class="plat-card active" data-platform="instagram"><input type="checkbox" value="instagram" checked><span class="plat-card-name">Instagram</span><span class="plat-card-tick">✓</span></label>
+            <label class="plat-card active" data-platform="linkedin"><input type="checkbox" value="linkedin" checked><span class="plat-card-name">LinkedIn</span><span class="plat-card-tick">✓</span></label>
+            <label class="plat-card" data-platform="x"><input type="checkbox" value="x"><span class="plat-card-name">X / Twitter</span><span class="plat-card-tick">✓</span></label>
+            <label class="plat-card active" data-platform="classdojo"><input type="checkbox" value="classdojo" checked><span class="plat-card-name">ClassDojo</span><span class="plat-card-tick">✓</span></label>
+            <label class="plat-card active" data-platform="email"><input type="checkbox" value="email" checked><span class="plat-card-name">Newsletter</span><span class="plat-card-tick">✓</span></label>
+          </div>
+          <button class="btn-generate" id="btnDayFreeformGenerate" onclick="generateDayFreeform()">Generate posts</button>
+        </div>
+        <div class="gen-results" id="genDayFreeformResults"></div>
+      </div>
+
       <!-- ── Event state (shown when event clicked) ─────────────────── -->
       <div id="genEventState" style="display:none">
         <button class="gen-back" onclick="showEmptyState()">← Back</button>
@@ -121,8 +154,11 @@
           </div>
         </div>
 
-        <div class="gen-section">
-          <div class="gen-section-label">Select platforms</div>
+        <!-- Existing drafts (populated by JS) -->
+        <div id="genExistingDrafts"></div>
+
+        <div class="gen-section" id="genNewDraftSection">
+          <div class="gen-section-label" id="genNewDraftLabel">Generate posts</div>
           <div class="plat-grid" id="eventPlatGrid">
             <label class="plat-card active" data-platform="facebook"><input type="checkbox" value="facebook" checked><span class="plat-card-name">Facebook</span><span class="plat-card-tick">✓</span></label>
             <label class="plat-card active" data-platform="instagram"><input type="checkbox" value="instagram" checked><span class="plat-card-name">Instagram</span><span class="plat-card-tick">✓</span></label>
@@ -195,14 +231,20 @@
         <input class="form-control" type="date" id="evDate">
       </div>
       <div class="form-group">
-        <label class="form-label">Category</label>
-        <select class="form-control" id="evCategory">
+        <label class="form-label">Category / Tag</label>
+        <select class="form-control" id="evCategory" onchange="toggleCustomCategory(this)">
           <option value="community">Community</option>
           <option value="academic">Academic</option>
           <option value="admissions">Admissions</option>
           <option value="achievement">Achievement</option>
           <option value="holiday">Holiday</option>
+          <option value="sports">Sports & Activities</option>
+          <option value="staff">Staff & Faculty</option>
+          <option value="custom">Custom tag…</option>
         </select>
+        <input class="form-control" type="text" id="evCategoryCustom"
+               style="display:none; margin-top:8px"
+               placeholder="e.g. Robotics Club, Reading Week, Parent Night">
       </div>
       <div class="form-group">
         <label class="form-label">Description <span style="font-weight:400;color:#888">(optional — helps generate better posts)</span></label>
