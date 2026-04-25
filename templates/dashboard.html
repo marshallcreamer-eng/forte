@@ -145,83 +145,85 @@
 {% macro render_event_card(item, expanded) %}
 {% set ev = item.event %}
 {% set drafts = item.drafts %}
-{% set platforms = [
-  ('facebook',  'Facebook'),
-  ('instagram', 'Instagram'),
-  ('linkedin',  'LinkedIn'),
-  ('x',         'X / Twitter'),
-  ('classdojo', 'ClassDojo'),
-  ('email',     'Newsletter'),
-] %}
-{% set drafted_count  = drafts|length %}
-{% set posted_count   = drafts.values()|selectattr('status','eq','posted')|list|length %}
+{% set drafted_count = drafts|length %}
+{% set posted_count  = drafts.values()|selectattr('status','eq','posted')|list|length %}
+{% set all_posted    = drafted_count > 0 and posted_count == drafted_count %}
 
+{% if expanded %}
+{# ── This week: show description + per-platform copy row ── #}
 <div class="event-card" id="ec-{{ ev.id }}">
-
-  <!-- Card header -->
   <div class="ec-header">
     <div class="ec-header-left">
       <span class="ec-cat {{ ev.category }}">{{ ev.category|title }}</span>
       <div class="ec-date-line">{{ ev.date.strftime('%A, %B %-d') }}</div>
     </div>
     <div class="ec-header-right">
-      {% if drafted_count > 0 %}
-        <span class="ec-summary">{{ drafted_count }}/6 drafted{% if posted_count %} · {{ posted_count }} posted{% endif %}</span>
-      {% endif %}
       <button class="btn-gen-event"
         onclick="openEventFromDash({{ ev.id }}, {{ ev.title|tojson }}, {{ ev.description|tojson }}, '{{ ev.date.isoformat() }}', '{{ ev.category }}')">
-        {% if drafted_count == 0 %}✦ Generate posts{% else %}↺ Regenerate{% endif %}
+        {% if drafted_count == 0 %}✦ Create posts{% else %}✦ View &amp; copy{% endif %}
       </button>
     </div>
   </div>
-
-  <!-- Title + description -->
   <div class="ec-body">
     <h3 class="ec-title">{{ ev.title }}</h3>
     {% if ev.description %}<p class="ec-desc">{{ ev.description }}</p>{% endif %}
   </div>
-
-  <!-- Platform status grid -->
-  <div class="ec-plat-grid">
-    {% for platform, label in platforms %}
-    {% set draft = drafts.get(platform) %}
-    <div class="ec-plat-item {{ draft.status if draft else 'needs_post' }}" data-platform="{{ platform }}">
-      <div class="ec-plat-dot"></div>
-      <div class="ec-plat-info">
-        <div class="ec-plat-label">{{ label }}</div>
-        <div class="ec-plat-status">
-          {% if draft %}
-            {% if draft.status == 'posted' %}Posted ✓
-            {% elif draft.status == 'draft_ready' %}Draft ready
-            {% elif draft.status == 'scheduled' %}Scheduled
-            {% else %}Needs post{% endif %}
-          {% else %}Needs post{% endif %}
-        </div>
-      </div>
-      {% if draft %}
-      <div class="ec-plat-btns">
-        <button class="btn-copy-small" onclick="copyDraftById({{ draft.id }}, {{ draft.content|tojson }}, this)">Copy</button>
-        {% if draft.status != 'posted' %}
-        <button class="btn-mark-posted" onclick="markPosted({{ draft.id }}, this)">✓</button>
+  {% if drafted_count > 0 %}
+  <div class="ec-copy-row">
+    {% set platforms_with_drafts = [
+      ('facebook','Facebook'), ('instagram','Instagram'), ('linkedin','LinkedIn'),
+      ('x','X'), ('classdojo','ClassDojo'), ('email','Newsletter')
+    ] %}
+    {% for slug, label in platforms_with_drafts %}
+    {% set d = drafts.get(slug) %}
+    {% if d %}
+    <div class="ec-copy-item {{ d.status }}" data-platform="{{ slug }}">
+      <div class="ec-copy-dot"></div>
+      <span class="ec-copy-label">{{ label }}</span>
+      <div class="ec-copy-btns">
+        <button class="btn-copy-small" onclick="copyDraftById({{ d.id }}, {{ d.content|tojson }}, this)">Copy</button>
+        {% if d.status != 'posted' %}
+        <button class="btn-mark-posted" onclick="markPosted({{ d.id }}, this)" title="Mark as posted">✓</button>
         {% endif %}
       </div>
-      {% endif %}
-    </div>
-    {% endfor %}
-  </div>
-
-  <!-- Photo brief (expanded / this week only) -->
-  {% if expanded %}
-    {% set any_brief = drafts.values()|selectattr('photo_brief')|list %}
-    {% if any_brief %}
-    <div class="ec-photo-brief">
-      <span class="photo-brief-label">📷 Photo brief</span>
-      <span class="photo-brief-text">{{ any_brief[0].photo_brief }}</span>
     </div>
     {% endif %}
+    {% endfor %}
+  </div>
   {% endif %}
-
+  {% set any_brief = drafts.values()|selectattr('photo_brief')|list %}
+  {% if any_brief %}
+  <div class="ec-photo-brief">
+    <span class="photo-brief-label">📷 Photo brief</span>
+    <span class="photo-brief-text">{{ any_brief[0].photo_brief }}</span>
+  </div>
+  {% endif %}
 </div>
+
+{% else %}
+{# ── Coming up: simple card — title, date, one status, one button ── #}
+<div class="event-card-compact" id="ec-{{ ev.id }}">
+  <div class="ecc-left">
+    <span class="ec-cat {{ ev.category }}">{{ ev.category|title }}</span>
+    <h3 class="ecc-title">{{ ev.title }}</h3>
+    <div class="ecc-date">{{ ev.date.strftime('%A, %B %-d') }}</div>
+  </div>
+  <div class="ecc-right">
+    {% if all_posted %}
+      <span class="ecc-status posted">All posted ✓</span>
+    {% elif drafted_count > 0 %}
+      <span class="ecc-status ready">{{ drafted_count }} draft{{ 's' if drafted_count != 1 }} ready</span>
+    {% else %}
+      <span class="ecc-status none">No posts yet</span>
+    {% endif %}
+    <button class="ecc-btn"
+      onclick="openEventFromDash({{ ev.id }}, {{ ev.title|tojson }}, {{ ev.description|tojson }}, '{{ ev.date.isoformat() }}', '{{ ev.category }}')">
+      {% if drafted_count == 0 %}Create posts →{% else %}View &amp; copy →{% endif %}
+    </button>
+  </div>
+</div>
+{% endif %}
+{% endmacro %}
 {% endmacro %}
 
 {% block scripts %}
