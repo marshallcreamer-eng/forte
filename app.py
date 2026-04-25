@@ -353,9 +353,10 @@ def create_app():
         platforms     = data.get('platforms', list(PLATFORM_CONFIG.keys()))
 
         ev = Event.query.get(event_id) if event_id else None
-        event_text = data.get('event_text', '') or (
+        event_text   = data.get('event_text', '') or (
             f'{ev.title}. {ev.description}'.strip() if ev else ''
         )
+        content_type = data.get('content_type', 'photo')  # text | photo | video
         if not event_text:
             return jsonify({'error': 'event_text is required'}), 400
 
@@ -363,7 +364,7 @@ def create_app():
 
         # Single batched API call for all platforms + photo brief
         try:
-            results, photo_brief = _generate_all(platforms, event_text, tone_override, tov, app)
+            results, photo_brief = _generate_all(platforms, event_text, tone_override, tov, content_type, app)
         except Exception as exc:
             return jsonify({'error': str(exc)}), 500
 
@@ -656,24 +657,35 @@ def _gemini_call(app, prompt, retries=3):
                 raise
 
 
-def _generate_all(platforms, event_text, tone_override, tov, app):
+def _generate_all(platforms, event_text, tone_override, tov, content_type, app):
     """
     Single API call that produces all platform drafts + photo brief at once.
     Reduces N calls down to 1, staying well within the free-tier 5 RPM limit.
     """
     tone_extra = f'\nTONE OVERRIDE for all posts: {tone_override}.' if tone_override else ''
 
+    media_context = {
+        'photo': 'This post WILL be accompanied by a photo. Write captions that reference/complement the image. The photo brief should describe exactly what to shoot.',
+        'video': 'This post WILL include a short video clip. Write captions that hook viewers in the first line and encourage them to watch. The photo brief should describe exactly what video to record (length, what to capture, any text overlay suggestions).',
+        'text':  'This post will be TEXT ONLY — no photo or video. The content must stand on its own without any image. Skip the photo brief or note it is not applicable.',
+    }.get(content_type, '')
+
     platform_specs = '\n'.join(
         f'- {p.upper()}: {PLATFORM_CONFIG[p]}'
         for p in platforms if p in PLATFORM_CONFIG
     )
 
+    brief_instruction = (
+        'Also write a PHOTO_BRIEF (2-3 sentences: shot type, who is in frame, mood, any text overlay if video).'
+        if content_type in ('photo', 'video')
+        else 'Set photo_brief to an empty string.'
+    )
+
     prompt = (
         f"{tov}{tone_extra}\n\n"
+        f"MEDIA CONTEXT: {media_context}\n\n"
         f"Write social media posts for the following school moment:\n\n{event_text}\n\n"
-        f"Generate one post per platform below. "
-        f"Also write a short PHOTO_BRIEF (2-3 sentences telling a non-photographer exactly "
-        f"what to capture: shot type, who's in frame, mood).\n\n"
+        f"Generate one post per platform below. {brief_instruction}\n\n"
         f"Platform requirements:\n{platform_specs}\n\n"
         f"Reply with ONLY a JSON object — no markdown, no code fences — in this exact format:\n"
         f'{{"photo_brief": "...", '

@@ -103,6 +103,14 @@
             <label class="plat-card active" data-platform="classdojo"><input type="checkbox" value="classdojo" checked><span class="plat-card-name">ClassDojo</span><span class="plat-card-tick">✓</span></label>
             <label class="plat-card active" data-platform="email"><input type="checkbox" value="email" checked><span class="plat-card-name">Newsletter</span><span class="plat-card-tick">✓</span></label>
           </div>
+          <div class="content-type-row">
+            <label class="gen-tone-label">Will this post include media?</label>
+            <div class="ct-toggle">
+              <button class="ct-btn" data-type="text"  onclick="setContentType('text',  this)">📝 Text only</button>
+              <button class="ct-btn active" data-type="photo" onclick="setContentType('photo', this)">📷 Photo</button>
+              <button class="ct-btn" data-type="video" onclick="setContentType('video', this)">🎬 Video</button>
+            </div>
+          </div>
           <button class="btn-generate" id="btnFreeformGenerate" onclick="generateFreeform()">Generate posts</button>
         </div>
 
@@ -133,6 +141,14 @@
             <label class="plat-card" data-platform="x"><input type="checkbox" value="x"><span class="plat-card-name">X / Twitter</span><span class="plat-card-tick">✓</span></label>
             <label class="plat-card active" data-platform="classdojo"><input type="checkbox" value="classdojo" checked><span class="plat-card-name">ClassDojo</span><span class="plat-card-tick">✓</span></label>
             <label class="plat-card active" data-platform="email"><input type="checkbox" value="email" checked><span class="plat-card-name">Newsletter</span><span class="plat-card-tick">✓</span></label>
+          </div>
+          <div class="content-type-row">
+            <label class="gen-tone-label">Will this post include media?</label>
+            <div class="ct-toggle">
+              <button class="ct-btn" data-type="text"  onclick="setContentType('text',  this)">📝 Text only</button>
+              <button class="ct-btn active" data-type="photo" onclick="setContentType('photo', this)">📷 Photo</button>
+              <button class="ct-btn" data-type="video" onclick="setContentType('video', this)">🎬 Video</button>
+            </div>
           </div>
           <button class="btn-generate" id="btnDayFreeformGenerate" onclick="generateDayFreeform()">Generate posts</button>
         </div>
@@ -171,6 +187,14 @@
             <label class="gen-tone-label">Tone override <span class="gen-tone-hint">(optional)</span></label>
             <input type="text" class="gen-tone-input" id="genToneOverride"
                    placeholder="e.g. more celebratory, aimed at new families, include enrollment link">
+          </div>
+          <div class="content-type-row">
+            <label class="gen-tone-label">Will this post include media?</label>
+            <div class="ct-toggle">
+              <button class="ct-btn" data-type="text"  onclick="setContentType('text',  this)">📝 Text only</button>
+              <button class="ct-btn active" data-type="photo" onclick="setContentType('photo', this)">📷 Photo</button>
+              <button class="ct-btn" data-type="video" onclick="setContentType('video', this)">🎬 Video</button>
+            </div>
           </div>
           <button class="btn-generate" id="btnGenerate" onclick="generateDrafts()">Generate drafts</button>
         </div>

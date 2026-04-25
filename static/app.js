@@ -4,6 +4,15 @@
 let activeEvent     = null;   // {id, title, desc, date, category}
 let lastEventText   = '';     // last text sent to generate — used by Regenerate
 let importedEvents  = [];     // events waiting for review
+let contentType     = 'photo'; // text | photo | video
+
+function setContentType(type, btn) {
+  contentType = type;
+  // Update all ct-toggle buttons on the page
+  document.querySelectorAll('.ct-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.type === type);
+  });
+}
 
 // ── Dashboard helpers ─────────────────────────────────────────────────────
 
@@ -173,7 +182,7 @@ async function generateDayFreeform() {
     lastEventText = text;
     const resp = await fetch('/api/generate', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ event_text: text, tone_override: tone, platforms }),
+      body: JSON.stringify({ event_text: text, tone_override: tone, platforms, content_type: contentType }),
     });
     const data = await resp.json();
     if (!resp.ok) throw new Error(data.error);
@@ -296,7 +305,7 @@ async function generateFreeform() {
     const resp = await fetch('/api/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ event_text: text, tone_override: tone, platforms }),
+      body: JSON.stringify({ event_text: text, tone_override: tone, platforms, content_type: contentType }),
     });
     const data = await resp.json();
     if (!resp.ok) throw new Error(data.error);
@@ -344,6 +353,7 @@ async function generateDrafts() {
         event_id:      activeEvent.id,
         tone_override: tone,
         platforms,
+        content_type:  contentType,
       }),
     });
     const data = await resp.json();
@@ -424,8 +434,8 @@ async function regenSingle(platform, btn) {
   const toneEl  = document.getElementById('genToneOverride') || document.getElementById('genFreeformTone');
   const tone    = toneEl ? toneEl.value.trim() : '';
   const payload = activeEvent
-    ? { event_id: activeEvent.id, tone_override: tone, platforms: [platform] }
-    : { event_text: lastEventText, tone_override: tone, platforms: [platform] };
+    ? { event_id: activeEvent.id, tone_override: tone, platforms: [platform], content_type: contentType }
+    : { event_text: lastEventText, tone_override: tone, platforms: [platform], content_type: contentType };
 
   try {
     const resp = await fetch('/api/generate', {
