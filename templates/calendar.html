@@ -73,50 +73,74 @@
 
   </div><!-- /cal-main -->
 
-  <!-- ── Right: Generator Panel ───────────────────────────────────────── -->
+  <!-- ── Right: Generator Panel (always visible) ───────────────────── -->
   <div class="gen-panel" id="genPanel">
     <div class="gen-panel-inner">
 
-      <button class="gen-close" onclick="closePanel()">✕ Close</button>
+      <!-- ── Empty state (default) ──────────────────────────────────── -->
+      <div id="genEmptyState">
+        <div class="gen-empty-icon">🏰</div>
+        <div class="gen-empty-title">Ready to create</div>
+        <div class="gen-empty-sub">Click any event on the calendar to generate posts — or describe what's happening at BPA below.</div>
 
-      <!-- Event Info -->
-      <div class="gen-event-info" id="genEventInfo">
-        <div class="gen-event-category" id="genCategory"></div>
-        <h2 class="gen-event-title" id="genTitle"></h2>
-        <div class="gen-event-date" id="genDate"></div>
-        <p class="gen-event-desc" id="genDesc"></p>
-        <div class="gen-event-actions">
-          <button class="btn-edit-event" id="btnEditEvent" onclick="openEditModal()">Edit event</button>
-          <button class="btn-delete-event" id="btnDeleteEvent" onclick="deleteEvent()">Delete</button>
+        <div class="gen-freeform-box">
+          <label class="gen-section-label">Something happening today?</label>
+          <textarea class="gen-freeform-input" id="genFreeformText" rows="3"
+            placeholder="e.g. Our chess team just won regionals! Three 6th graders placed in the top 5…"></textarea>
+          <div class="gen-tone-row" style="margin-top:10px">
+            <label class="gen-tone-label">Tone override <span class="gen-tone-hint">(optional)</span></label>
+            <input type="text" class="gen-tone-input" id="genFreeformTone"
+                   placeholder="e.g. excited, for parents, include enrollment link">
+          </div>
+          <div class="plat-grid" id="freeformPlatGrid">
+            <label class="plat-card active" data-platform="facebook"><input type="checkbox" value="facebook" checked><span class="plat-card-name">Facebook</span><span class="plat-card-tick">✓</span></label>
+            <label class="plat-card active" data-platform="instagram"><input type="checkbox" value="instagram" checked><span class="plat-card-name">Instagram</span><span class="plat-card-tick">✓</span></label>
+            <label class="plat-card active" data-platform="linkedin"><input type="checkbox" value="linkedin" checked><span class="plat-card-name">LinkedIn</span><span class="plat-card-tick">✓</span></label>
+            <label class="plat-card" data-platform="x"><input type="checkbox" value="x"><span class="plat-card-name">X / Twitter</span><span class="plat-card-tick">✓</span></label>
+            <label class="plat-card active" data-platform="classdojo"><input type="checkbox" value="classdojo" checked><span class="plat-card-name">ClassDojo</span><span class="plat-card-tick">✓</span></label>
+            <label class="plat-card active" data-platform="email"><input type="checkbox" value="email" checked><span class="plat-card-name">Newsletter</span><span class="plat-card-tick">✓</span></label>
+          </div>
+          <button class="btn-generate" id="btnFreeformGenerate" onclick="generateFreeform()">Generate posts</button>
         </div>
+
+        <div class="gen-results" id="genFreeformResults"></div>
       </div>
 
-      <!-- Generator -->
-      <div class="gen-section">
-        <div class="gen-section-label">Generate social media posts</div>
-        <div class="gen-section-sub">Select platforms, then click Generate. Copy each draft and paste directly into the platform.</div>
+      <!-- ── Event state (shown when event clicked) ─────────────────── -->
+      <div id="genEventState" style="display:none">
+        <button class="gen-back" onclick="showEmptyState()">← Back</button>
 
-        <div class="plat-grid">
-          <label class="plat-card active" data-platform="facebook"><input type="checkbox" value="facebook" checked><span class="plat-card-icon">f</span><span class="plat-card-name">Facebook</span><span class="plat-card-tick">✓</span></label>
-          <label class="plat-card active" data-platform="instagram"><input type="checkbox" value="instagram" checked><span class="plat-card-icon">📷</span><span class="plat-card-name">Instagram</span><span class="plat-card-tick">✓</span></label>
-          <label class="plat-card active" data-platform="linkedin"><input type="checkbox" value="linkedin" checked><span class="plat-card-icon">in</span><span class="plat-card-name">LinkedIn</span><span class="plat-card-tick">✓</span></label>
-          <label class="plat-card" data-platform="x"><input type="checkbox" value="x"><span class="plat-card-icon">𝕏</span><span class="plat-card-name">X / Twitter</span><span class="plat-card-tick">✓</span></label>
-          <label class="plat-card active" data-platform="classdojo"><input type="checkbox" value="classdojo" checked><span class="plat-card-icon">🏫</span><span class="plat-card-name">ClassDojo</span><span class="plat-card-tick">✓</span></label>
+        <div class="gen-event-info" id="genEventInfo">
+          <div class="gen-event-category" id="genCategory"></div>
+          <h2 class="gen-event-title" id="genTitle"></h2>
+          <div class="gen-event-date" id="genDate"></div>
+          <p class="gen-event-desc" id="genDesc"></p>
+          <div class="gen-event-actions">
+            <button class="btn-edit-event" id="btnEditEvent" onclick="openEditModal()">Edit event</button>
+            <button class="btn-delete-event" id="btnDeleteEvent" onclick="deleteEvent()">Delete</button>
+          </div>
         </div>
 
-        <div class="gen-tone-row">
-          <label class="gen-tone-label">Tone override <span class="gen-tone-hint">(optional)</span></label>
-          <input type="text" class="gen-tone-input" id="genToneOverride"
-                 placeholder="e.g. more celebratory, aimed at new families, include enrollment link">
+        <div class="gen-section">
+          <div class="gen-section-label">Select platforms</div>
+          <div class="plat-grid" id="eventPlatGrid">
+            <label class="plat-card active" data-platform="facebook"><input type="checkbox" value="facebook" checked><span class="plat-card-name">Facebook</span><span class="plat-card-tick">✓</span></label>
+            <label class="plat-card active" data-platform="instagram"><input type="checkbox" value="instagram" checked><span class="plat-card-name">Instagram</span><span class="plat-card-tick">✓</span></label>
+            <label class="plat-card active" data-platform="linkedin"><input type="checkbox" value="linkedin" checked><span class="plat-card-name">LinkedIn</span><span class="plat-card-tick">✓</span></label>
+            <label class="plat-card" data-platform="x"><input type="checkbox" value="x"><span class="plat-card-name">X / Twitter</span><span class="plat-card-tick">✓</span></label>
+            <label class="plat-card active" data-platform="classdojo"><input type="checkbox" value="classdojo" checked><span class="plat-card-name">ClassDojo</span><span class="plat-card-tick">✓</span></label>
+            <label class="plat-card active" data-platform="email"><input type="checkbox" value="email" checked><span class="plat-card-name">Newsletter</span><span class="plat-card-tick">✓</span></label>
+          </div>
+          <div class="gen-tone-row">
+            <label class="gen-tone-label">Tone override <span class="gen-tone-hint">(optional)</span></label>
+            <input type="text" class="gen-tone-input" id="genToneOverride"
+                   placeholder="e.g. more celebratory, aimed at new families, include enrollment link">
+          </div>
+          <button class="btn-generate" id="btnGenerate" onclick="generateDrafts()">Generate drafts</button>
         </div>
 
-        <button class="btn-generate" id="btnGenerate" onclick="generateDrafts()">
-          Generate drafts
-        </button>
+        <div class="gen-results" id="genResults"></div>
       </div>
-
-      <!-- Draft Results -->
-      <div class="gen-results" id="genResults"></div>
 
     </div>
   </div><!-- /gen-panel -->

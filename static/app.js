@@ -66,6 +66,12 @@ function designInCanvaByPlatform(platform, content) {
 
 // ── Event Panel ───────────────────────────────────────────────────────────
 
+function showEmptyState() {
+  document.getElementById('genEmptyState')  && (document.getElementById('genEmptyState').style.display  = '');
+  document.getElementById('genEventState')  && (document.getElementById('genEventState').style.display  = 'none');
+  activeEvent = null;
+}
+
 function openEvent(el) {
   activeEvent = {
     id:       parseInt(el.dataset.id),
@@ -75,25 +81,63 @@ function openEvent(el) {
     category: el.dataset.category,
   };
 
-  const panel = document.getElementById('genPanel');
-  document.getElementById('genTitle').textContent    = activeEvent.title;
-  document.getElementById('genDate').textContent     = formatDate(activeEvent.date);
-  document.getElementById('genDesc').textContent     = activeEvent.desc || '';
+  document.getElementById('genTitle').textContent  = activeEvent.title;
+  document.getElementById('genDate').textContent   = formatDate(activeEvent.date);
+  document.getElementById('genDesc').textContent   = activeEvent.desc || '';
   const catEl = document.getElementById('genCategory');
-  catEl.textContent  = capFirst(activeEvent.category);
-  catEl.className    = `gen-event-category ${activeEvent.category}`;
+  catEl.textContent = capFirst(activeEvent.category);
+  catEl.className   = `gen-event-category ${activeEvent.category}`;
 
-  document.getElementById('genResults').innerHTML = '';
-  document.getElementById('genToneOverride').value = '';
-  document.getElementById('btnGenerate').disabled  = false;
+  document.getElementById('genResults').innerHTML   = '';
+  document.getElementById('genToneOverride').value  = '';
+  document.getElementById('btnGenerate').disabled   = false;
   document.getElementById('btnGenerate').textContent = 'Generate drafts';
 
-  panel.classList.add('open');
+  // Switch to event state
+  const empty = document.getElementById('genEmptyState');
+  const event = document.getElementById('genEventState');
+  if (empty) empty.style.display = 'none';
+  if (event) event.style.display = '';
 }
 
 function closePanel() {
-  document.getElementById('genPanel').classList.remove('open');
-  activeEvent = null;
+  showEmptyState();
+}
+
+// ── Freeform generator (empty state) ─────────────────────────────────────
+
+async function generateFreeform() {
+  const text = document.getElementById('genFreeformText')?.value.trim();
+  if (!text) { showToast('Describe what\'s happening first.'); return; }
+
+  const platforms = Array.from(
+    document.querySelectorAll('#freeformPlatGrid .plat-card.active input')
+  ).map(cb => cb.value);
+  if (!platforms.length) { showToast('Select at least one platform.'); return; }
+
+  const tone    = document.getElementById('genFreeformTone')?.value.trim();
+  const btn     = document.getElementById('btnFreeformGenerate');
+  const results = document.getElementById('genFreeformResults');
+
+  btn.disabled    = true;
+  btn.textContent = 'Generating…';
+  results.innerHTML = `<div class="gen-loading"><div class="gen-spinner"></div><div class="gen-loading-text">Writing in BPA's tone of voice…</div></div>`;
+
+  try {
+    const resp = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event_text: text, tone_override: tone, platforms }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error);
+    renderDraftCards(results, data);
+  } catch (err) {
+    results.innerHTML = `<div style="color:var(--red);padding:16px;font-size:13px;">Error: ${err.message}</div>`;
+  }
+
+  btn.disabled    = false;
+  btn.textContent = 'Generate posts';
 }
 
 // ── Generate Drafts ───────────────────────────────────────────────────────
@@ -134,61 +178,7 @@ async function generateDrafts() {
     const data = await resp.json();
     if (!resp.ok) throw new Error(data.error || 'Generation failed');
 
-    results.innerHTML = '';
-
-    // Photo brief block
-    if (data.photo_brief) {
-      const brief = document.createElement('div');
-      brief.className = 'photo-brief-panel';
-      brief.innerHTML = `
-        <div class="photo-brief-header">📷 Photo brief — what to capture</div>
-        <div class="photo-brief-body">${escHtml(data.photo_brief)}</div>
-      `;
-      results.appendChild(brief);
-    }
-
-    const platformOrder = ['facebook', 'instagram', 'linkedin', 'x', 'classdojo', 'email'];
-    const platformMeta = {
-      facebook:  { label: 'Facebook',    icon: 'f',   canva: 'facebook_post' },
-      instagram: { label: 'Instagram',   icon: '📷',  canva: 'instagram_post' },
-      linkedin:  { label: 'LinkedIn',    icon: 'in',  canva: null },
-      x:         { label: 'X / Twitter', icon: '𝕏',  canva: null },
-      classdojo: { label: 'ClassDojo',   icon: '🏫',  canva: null },
-      email:     { label: 'Newsletter',  icon: '✉️',  canva: null },
-    };
-    const bestTimes = data.best_times || {};
-
-    platformOrder.filter(p => p in data.drafts).forEach(platform => {
-      const content   = data.drafts[platform];
-      const meta      = platformMeta[platform];
-      const bt        = bestTimes[platform];
-      const card      = document.createElement('div');
-      card.className  = 'draft-card';
-
-      const canvaBtn = meta.canva
-        ? `<button class="btn-canva" onclick="designInCanva('${platform}', '${meta.canva}', this)" title="Create a graphic in Canva">🎨 Canva</button>`
-        : '';
-      const btHtml = bt
-        ? `<div class="draft-best-time">⏰ Best time: ${bt.days} · ${bt.time} <span class="bt-note">(${bt.note})</span></div>`
-        : '';
-
-      card.innerHTML = `
-        <div class="draft-card-header">
-          <div class="draft-platform-name">
-            <span class="plat-icon">${meta.icon}</span> ${meta.label}
-          </div>
-          <div class="draft-card-actions">
-            ${canvaBtn}
-            <button class="btn-regen" onclick="regenSingle('${platform}', this)">↺ Redo</button>
-            <button class="btn-copy" onclick="copyDraft(this)">Copy</button>
-          </div>
-        </div>
-        <div class="draft-content">${escHtml(content)}</div>
-        ${btHtml}
-        <div class="draft-char-count">${content.length} chars</div>
-      `;
-      results.appendChild(card);
-    });
+    renderDraftCards(results, data);
 
   } catch (err) {
     results.innerHTML = `<div style="color:var(--red);padding:16px;font-size:13px;">Error: ${err.message}</div>`;
@@ -196,6 +186,59 @@ async function generateDrafts() {
 
   btn.disabled    = false;
   btn.textContent = 'Regenerate all';
+}
+
+// ── Shared draft card renderer ────────────────────────────────────────────
+
+function renderDraftCards(container, data) {
+  container.innerHTML = '';
+
+  if (data.photo_brief) {
+    const brief = document.createElement('div');
+    brief.className = 'photo-brief-panel';
+    brief.innerHTML = `<div class="photo-brief-header">📷 Photo brief — what to capture</div><div class="photo-brief-body">${escHtml(data.photo_brief)}</div>`;
+    container.appendChild(brief);
+  }
+
+  const order = ['facebook', 'instagram', 'linkedin', 'x', 'classdojo', 'email'];
+  const meta  = {
+    facebook:  { label: 'Facebook',    canva: 'facebook_post' },
+    instagram: { label: 'Instagram',   canva: 'instagram_post' },
+    linkedin:  { label: 'LinkedIn',    canva: null },
+    x:         { label: 'X / Twitter', canva: null },
+    classdojo: { label: 'ClassDojo',   canva: null },
+    email:     { label: 'Newsletter',  canva: null },
+  };
+  const bestTimes = data.best_times || {};
+
+  order.filter(p => p in (data.drafts || {})).forEach(platform => {
+    const content  = data.drafts[platform];
+    const m        = meta[platform];
+    const bt       = bestTimes[platform];
+    const card     = document.createElement('div');
+    card.className = 'draft-card';
+
+    const canvaBtn = m.canva
+      ? `<button class="btn-canva" onclick="designInCanva('${platform}', '${m.canva}', this)">🎨 Canva</button>`
+      : '';
+    const btHtml = bt
+      ? `<div class="draft-best-time">⏰ ${bt.days} · ${bt.time} <span class="bt-note">${bt.note}</span></div>`
+      : '';
+
+    card.innerHTML = `
+      <div class="draft-card-header">
+        <div class="draft-platform-name plat-dot-${platform}">${m.label}</div>
+        <div class="draft-card-actions">
+          ${canvaBtn}
+          <button class="btn-regen" onclick="regenSingle('${platform}', this)">↺ Redo</button>
+          <button class="btn-copy" onclick="copyDraft(this)">Copy</button>
+        </div>
+      </div>
+      <div class="draft-content">${escHtml(content)}</div>
+      ${btHtml}
+      <div class="draft-char-count">${content.length} chars</div>`;
+    container.appendChild(card);
+  });
 }
 
 async function regenSingle(platform, btn) {

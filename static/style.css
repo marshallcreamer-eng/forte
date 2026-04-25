@@ -296,36 +296,60 @@ a { color: inherit; text-decoration: none; }
 .cal-event.community  { background: var(--cat-community); }
 .cal-event.achievement{ background: var(--cat-achievement); }
 
-/* ── Generator Panel ───────────────────────────────────────────────────── */
+/* ── Generator Panel (always visible) ─────────────────────────────────── */
 .gen-panel {
-  width: 0; min-width: 0;
+  width: 380px; min-width: 380px;
   background: var(--white);
   border-left: 1px solid var(--grey-border);
-  overflow: hidden;
-  transition: width 0.3s ease, min-width 0.3s ease;
   display: flex; flex-direction: column;
   flex-shrink: 0;
 }
 
-.gen-panel.open {
-  width: 420px; min-width: 420px;
-}
-
 .gen-panel-inner {
-  width: 420px;
+  width: 100%;
   overflow-y: auto;
   height: 100%;
-  padding: 20px;
+  padding: 24px 20px;
   display: flex; flex-direction: column; gap: 0;
 }
 
-.gen-close {
-  align-self: flex-end;
-  background: none; border: none; color: var(--text-light);
-  font-size: 12px; cursor: pointer; padding: 0;
-  margin-bottom: 12px; font-family: 'Inter', sans-serif;
+/* Empty state */
+.gen-empty-icon {
+  font-size: 36px; text-align: center; margin-bottom: 10px; margin-top: 8px;
 }
-.gen-close:hover { color: var(--text); }
+.gen-empty-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px; font-weight: 700; color: var(--navy);
+  text-align: center; margin-bottom: 6px;
+}
+.gen-empty-sub {
+  font-size: 13px; color: var(--text-light); text-align: center;
+  line-height: 1.6; margin-bottom: 20px;
+}
+
+.gen-freeform-box {
+  background: var(--grey-bg); border: 1px solid var(--grey-border);
+  border-radius: 12px; padding: 16px;
+}
+
+.gen-freeform-input {
+  width: 100%; padding: 10px 12px;
+  border: 1.5px solid var(--grey-border); border-radius: 8px;
+  font-size: 13px; font-family: 'Inter', sans-serif;
+  color: var(--text); background: var(--white);
+  resize: vertical; transition: border-color 0.15s;
+  margin-top: 8px;
+}
+.gen-freeform-input:focus { outline: none; border-color: var(--navy); }
+
+/* Back button */
+.gen-back {
+  background: none; border: none; color: var(--text-light);
+  font-size: 12px; font-weight: 600; cursor: pointer; padding: 0;
+  margin-bottom: 16px; font-family: 'Inter', sans-serif;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.gen-back:hover { color: var(--navy); }
 
 /* Event info */
 .gen-event-info { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--grey-border); }
@@ -487,8 +511,18 @@ a { color: inherit; text-decoration: none; }
 
 .draft-platform-name {
   font-size: 12px; font-weight: 700; color: var(--navy);
-  display: flex; align-items: center; gap: 6px;
+  display: flex; align-items: center; gap: 8px;
 }
+.draft-platform-name::before {
+  content: ''; display: inline-block;
+  width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
+}
+.plat-dot-facebook::before  { background: #1877F2; }
+.plat-dot-instagram::before { background: #E1306C; }
+.plat-dot-linkedin::before  { background: #0A66C2; }
+.plat-dot-x::before         { background: #111; }
+.plat-dot-classdojo::before { background: #00BF8F; }
+.plat-dot-email::before     { background: var(--navy); }
 
 .draft-card-actions { display: flex; gap: 6px; }
 
