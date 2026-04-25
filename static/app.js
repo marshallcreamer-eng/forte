@@ -179,7 +179,7 @@ async function generateDayFreeform() {
     if (!resp.ok) throw new Error(data.error);
     renderDraftCards(results, data);
   } catch (err) {
-    results.innerHTML = `<div style="color:var(--red);padding:16px;font-size:13px;">Error: ${err.message}</div>`;
+    results.innerHTML = `<div style="color:var(--red);padding:16px;font-size:13px;">${_friendlyError(err.message)}</div>`;
   }
   btn.disabled = false; btn.textContent = 'Generate posts';
 }
@@ -302,7 +302,7 @@ async function generateFreeform() {
     if (!resp.ok) throw new Error(data.error);
     renderDraftCards(results, data);
   } catch (err) {
-    results.innerHTML = `<div style="color:var(--red);padding:16px;font-size:13px;">Error: ${err.message}</div>`;
+    results.innerHTML = `<div style="color:var(--red);padding:16px;font-size:13px;">${_friendlyError(err.message)}</div>`;
   }
 
   btn.disabled    = false;
@@ -352,7 +352,7 @@ async function generateDrafts() {
     renderDraftCards(results, data);
 
   } catch (err) {
-    results.innerHTML = `<div style="color:var(--red);padding:16px;font-size:13px;">Error: ${err.message}</div>`;
+    results.innerHTML = `<div style="color:var(--red);padding:16px;font-size:13px;">${_friendlyError(err.message)}</div>`;
   }
 
   btn.disabled    = false;
@@ -711,6 +711,14 @@ async function confirmImport() {
 }
 
 // ── Utilities ─────────────────────────────────────────────────────────────
+
+function _friendlyError(msg) {
+  if (msg && (msg.includes('429') || msg.includes('quota') || msg.includes('RESOURCE_EXHAUSTED')))
+    return '⏱ Hit the API rate limit — please wait 10–15 seconds and try again.';
+  if (msg && msg.includes('API key'))
+    return '🔑 API key issue — check the GEMINI_API_KEY in your server config.';
+  return `Something went wrong: ${msg}`;
+}
 
 function showToast(msg) {
   const t = document.getElementById('toast');

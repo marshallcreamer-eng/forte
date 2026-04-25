@@ -359,20 +359,13 @@ def create_app():
         if not event_text:
             return jsonify({'error': 'event_text is required'}), 400
 
-        tov     = _build_tov_prompt(app)
-        results = {}
-        for platform in platforms:
-            try:
-                results[platform] = _generate_draft(platform, event_text, tone_override, tov, app)
-            except Exception as exc:
-                results[platform] = f'[Generation error: {exc}]'
+        tov = _build_tov_prompt(app)
 
-        # Generate photo brief
-        photo_brief = ''
+        # Single batched API call for all platforms + photo brief
         try:
-            photo_brief = _generate_photo_brief(event_text, app)
-        except Exception:
-            pass
+            results, photo_brief = _generate_all(platforms, event_text, tone_override, tov, app)
+        except Exception as exc:
+            return jsonify({'error': str(exc)}), 500
 
         if ev:
             for platform, content in results.items():
@@ -642,37 +635,75 @@ def _build_tov_prompt(app):
         )
 
 
-def _generate_draft(platform, event_text, tone_override, tov, app):
-    from google import genai as _genai
-    client      = _genai.Client(api_key=app.config['GEMINI_API_KEY'])
-    instruction = PLATFORM_CONFIG.get(platform, '')
-    tone_extra  = f' TONE OVERRIDE: {tone_override}.' if tone_override else ''
-    full_prompt = (
-        f'{tov}{tone_extra} PLATFORM INSTRUCTIONS: {instruction}\n\n'
-        f'Write a {platform} post about the following school moment:\n\n{event_text}'
-    )
-    resp = client.models.generate_content(
-        model='gemini-2.5-flash',
-        contents=[{'role': 'user', 'parts': [{'text': full_prompt}]}]
-    )
-    return resp.text.strip()
-
-
-def _generate_photo_brief(event_text, app):
+def _gemini_call(app, prompt, retries=3):
+    """Single Gemini call with automatic retry on 429 rate-limit errors."""
+    import time
     from google import genai as _genai
     client = _genai.Client(api_key=app.config['GEMINI_API_KEY'])
+    for attempt in range(retries):
+        try:
+            resp = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=[{'role': 'user', 'parts': [{'text': prompt}]}]
+            )
+            return resp.text.strip()
+        except Exception as exc:
+            msg = str(exc)
+            if '429' in msg and attempt < retries - 1:
+                wait = int(attempt * 10 + 8)   # 8s, 18s, 28s
+                time.sleep(wait)
+            else:
+                raise
+
+
+def _generate_all(platforms, event_text, tone_override, tov, app):
+    """
+    Single API call that produces all platform drafts + photo brief at once.
+    Reduces N calls down to 1, staying well within the free-tier 5 RPM limit.
+    """
+    tone_extra = f'\nTONE OVERRIDE for all posts: {tone_override}.' if tone_override else ''
+
+    platform_specs = '\n'.join(
+        f'- {p.upper()}: {PLATFORM_CONFIG[p]}'
+        for p in platforms if p in PLATFORM_CONFIG
+    )
+
     prompt = (
-        f"You are a school communications advisor. Based on this school event, write a short photography brief "
-        f"(2–3 sentences) telling a non-photographer staff member exactly what photo or video to capture. "
-        f"Be specific: composition, who should be in frame, setting, mood. "
-        f"Start with the shot type (e.g. 'Wide shot of...', 'Candid close-up of...').\n\n"
-        f"Event: {event_text}"
+        f"{tov}{tone_extra}\n\n"
+        f"Write social media posts for the following school moment:\n\n{event_text}\n\n"
+        f"Generate one post per platform below. "
+        f"Also write a short PHOTO_BRIEF (2-3 sentences telling a non-photographer exactly "
+        f"what to capture: shot type, who's in frame, mood).\n\n"
+        f"Platform requirements:\n{platform_specs}\n\n"
+        f"Reply with ONLY a JSON object — no markdown, no code fences — in this exact format:\n"
+        f'{{"photo_brief": "...", '
+        + ', '.join(f'"{p}": "..."' for p in platforms if p in PLATFORM_CONFIG)
+        + '}'
     )
-    resp = client.models.generate_content(
-        model='gemini-2.5-flash',
-        contents=[{'role': 'user', 'parts': [{'text': prompt}]}]
-    )
-    return resp.text.strip()
+
+    raw = _gemini_call(app, prompt)
+
+    # Strip markdown fences if present
+    if raw.startswith('```'):
+        lines = raw.split('\n')
+        raw = '\n'.join(lines[1:])
+        if raw.rstrip().endswith('```'):
+            raw = raw.rstrip()[:-3]
+
+    try:
+        parsed = json.loads(raw.strip())
+    except json.JSONDecodeError:
+        # Fallback: extract JSON object from response
+        import re
+        m = re.search(r'\{.*\}', raw, re.DOTALL)
+        if m:
+            parsed = json.loads(m.group())
+        else:
+            raise RuntimeError('Could not parse JSON from Gemini response')
+
+    photo_brief = parsed.pop('photo_brief', '')
+    results = {p: parsed.get(p, '') for p in platforms if p in PLATFORM_CONFIG}
+    return results, photo_brief
 
 
 def _seed_categories():
