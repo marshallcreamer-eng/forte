@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block head %}
+<style>
+  .dash-nav { display:flex; gap:8px; padding:14px 24px; background:#fff; border-bottom:1px solid var(--grey-border); }
+  .dash-nav a {
+    font-size:13px; font-weight:600; padding:6px 16px; border-radius:6px;
+    color:var(--text-light); transition:all 0.15s;
+  }
+  .dash-nav a.active, .dash-nav a:hover { background:var(--navy-light); color:var(--navy); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Sub-nav -->
+<div class="dash-nav">
+  <a href="{{ url_for('dashboard') }}" class="active">Dashboard</a>
+  <a href="{{ url_for('calendar_view') }}">Full Calendar</a>
+</div>
+
+<div class="dash-wrap">
+
+  <!-- ── Header row ──────────────────────────────────────────────────── -->
+  <div class="dash-header">
+    <div>
+      <h1 class="dash-title">Content Dashboard</h1>
+      <div class="dash-subtitle">{{ today.strftime('%A, %B %-d, %Y') }} · Belton Preparatory Academy</div>
+    </div>
+    <a href="{{ url_for('calendar_view') }}" class="btn-view-cal">View full calendar →</a>
+  </div>
+
+  <!-- ── Best Times Banner ───────────────────────────────────────────── -->
+  <div class="best-times-bar">
+    <span class="bt-label">Best times to post:</span>
+    {% for platform, info in best_times.items() %}
+    <span class="bt-chip">
+      <span class="bt-platform">{{ platform|title if platform != 'classdojo' else 'ClassDojo' }}</span>
+      {{ info.days }} · {{ info.time }}
+    </span>
+    {% endfor %}
+  </div>
+
+  <!-- ── This Week ───────────────────────────────────────────────────── -->
+  <div class="dash-section">
+    <div class="dash-section-header">
+      <div class="dash-section-title">This week</div>
+      <div class="dash-section-range">{{ week_start.strftime('%b %-d') }} – {{ week_end.strftime('%b %-d, %Y') }}</div>
+    </div>
+
+    {% if this_week %}
+      {% for item in this_week %}
+        {{ render_event_card(item, expanded=true) }}
+      {% endfor %}
+    {% else %}
+      <div class="dash-empty">
+        <div class="dash-empty-icon">🎉</div>
+        <div class="dash-empty-title">Nothing scheduled this week</div>
+        <div class="dash-empty-sub">Add events from the <a href="{{ url_for('calendar_view') }}">calendar</a> or import your school schedule.</div>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- ── Coming Up ──────────────────────────────────────────────────── -->
+  {% if coming_up %}
+  <div class="dash-section">
+    <div class="dash-section-header">
+      <div class="dash-section-title">Coming up</div>
+      <div class="dash-section-range">Next 2 weeks</div>
+    </div>
+    {% for item in coming_up %}
+      {{ render_event_card(item, expanded=false) }}
+    {% endfor %}
+  </div>
+  {% endif %}
+
+</div>
+
+<!-- ── Generator Panel (shared with calendar) ─────────────────────── -->
+<div class="gen-panel" id="genPanel">
+  <div class="gen-panel-inner">
+    <button class="gen-close" onclick="closePanel()">✕ Close</button>
+    <div class="gen-event-info" id="genEventInfo">
+      <div class="gen-event-category" id="genCategory"></div>
+      <h2 class="gen-event-title" id="genTitle"></h2>
+      <div class="gen-event-date" id="genDate"></div>
+      <p class="gen-event-desc" id="genDesc"></p>
+    </div>
+    <div class="gen-section">
+      <div class="gen-section-label">Generate posts</div>
+      <div class="gen-platforms">
+        <label class="plat-toggle active" data-platform="facebook"><input type="checkbox" value="facebook" checked><span class="plat-icon">f</span> Facebook</label>
+        <label class="plat-toggle active" data-platform="instagram"><input type="checkbox" value="instagram" checked><span class="plat-icon">📷</span> Instagram</label>
+        <label class="plat-toggle active" data-platform="linkedin"><input type="checkbox" value="linkedin" checked><span class="plat-icon">in</span> LinkedIn</label>
+        <label class="plat-toggle" data-platform="x"><input type="checkbox" value="x"><span class="plat-icon">𝕏</span> X</label>
+        <label class="plat-toggle active" data-platform="classdojo"><input type="checkbox" value="classdojo" checked><span class="plat-icon">🏫</span> ClassDojo</label>
+        <label class="plat-toggle active" data-platform="email"><input type="checkbox" value="email" checked><span class="plat-icon">✉️</span> Newsletter</label>
+      </div>
+      <div class="gen-tone-row">
+        <label class="gen-tone-label">Tone override <span class="gen-tone-hint">(optional)</span></label>
+        <input type="text" class="gen-tone-input" id="genToneOverride" placeholder="e.g. more celebratory, aimed at new families">
+      </div>
+      <button class="btn-generate" id="btnGenerate" onclick="generateDrafts()">Generate drafts</button>
+    </div>
+    <div class="gen-results" id="genResults"></div>
+  </div>
+</div>
+
+<!-- ── Import + Modals (reused from calendar) ─────────────────────── -->
+<div class="import-overlay" id="importOverlay" onclick="closeImport()">
+  <div class="import-box" onclick="event.stopPropagation()">
+    <div class="import-box-header">Import Calendar</div>
+    <div class="import-drop-zone" id="importDropZone">
+      <div class="import-drop-icon">📄</div>
+      <div class="import-drop-title">Drop your school calendar here</div>
+      <div class="import-drop-sub">Supports PDF, Word (.docx), CSV, or TXT</div>
+      <label class="btn-browse">Browse files<input type="file" id="importFileInput" accept=".pdf,.docx,.csv,.txt" style="display:none"></label>
+    </div>
+    <div class="import-progress" id="importProgress" style="display:none">
+      <div class="import-spinner"></div><span>Extracting events…</span>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="reviewOverlay" onclick="closeReview()">
+  <div class="modal-box review-box" onclick="event.stopPropagation()">
+    <div class="modal-header">Review extracted events</div>
+    <div class="modal-sub" id="reviewSub"></div>
+    <div class="review-list" id="reviewList"></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeReview()">Cancel</button>
+      <button class="btn-confirm" id="btnConfirmImport" onclick="confirmImport()">Add events</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="eventModalOverlay" onclick="closeEventModal()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-header" id="eventModalTitle">Add event</div>
+    <div class="modal-body">
+      <input type="hidden" id="editEventId">
+      <div class="form-group"><label class="form-label">Title *</label><input class="form-control" type="text" id="evTitle" placeholder="e.g. Spring Picture Day"></div>
+      <div class="form-group"><label class="form-label">Date *</label><input class="form-control" type="date" id="evDate"></div>
+      <div class="form-group"><label class="form-label">Category</label><select class="form-control" id="evCategory"><option value="community">Community</option><option value="academic">Academic</option><option value="admissions">Admissions</option><option value="achievement">Achievement</option><option value="holiday">Holiday</option></select></div>
+      <div class="form-group"><label class="form-label">Description</label><textarea class="form-control" id="evDesc" rows="3" placeholder="Add context to help generate better posts…"></textarea></div>
+    </div>
+    <div class="modal-footer"><button class="btn-cancel" onclick="closeEventModal()">Cancel</button><button class="btn-confirm" onclick="saveEvent()">Save event</button></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+{% endblock %}
+
+{% macro render_event_card(item, expanded) %}
+{% set ev = item.event %}
+{% set drafts = item.drafts %}
+<div class="event-card" id="ec-{{ ev.id }}">
+  <div class="ec-top">
+    <div class="ec-left">
+      <span class="ec-cat {{ ev.category }}">{{ ev.category|title }}</span>
+      <h3 class="ec-title">{{ ev.title }}</h3>
+      <div class="ec-date">{{ ev.date.strftime('%A, %B %-d') }}</div>
+      {% if ev.description %}<p class="ec-desc">{{ ev.description }}</p>{% endif %}
+    </div>
+    <div class="ec-right">
+      <button class="btn-gen-event" onclick="openEventFromDash({{ ev.id }}, {{ ev.title|tojson }}, {{ ev.description|tojson }}, '{{ ev.date.isoformat() }}', '{{ ev.category }}')">
+        ✦ Generate posts
+      </button>
+    </div>
+  </div>
+
+  <!-- Per-platform status row -->
+  <div class="ec-platforms">
+    {% set platform_meta = {
+      'facebook': {'icon': 'f', 'label': 'Facebook'},
+      'instagram': {'icon': '📷', 'label': 'Instagram'},
+      'linkedin': {'icon': 'in', 'label': 'LinkedIn'},
+      'x': {'icon': '𝕏', 'label': 'X'},
+      'classdojo': {'icon': '🏫', 'label': 'ClassDojo'},
+      'email': {'icon': '✉️', 'label': 'Newsletter'},
+    } %}
+    {% for platform, meta in platform_meta.items() %}
+    {% set draft = drafts.get(platform) %}
+    <div class="ec-plat" data-platform="{{ platform }}">
+      <span class="ec-plat-icon">{{ meta.icon }}</span>
+      <span class="ec-plat-name">{{ meta.label }}</span>
+      {% if draft %}
+        <span class="status-badge {{ draft.status }}" id="sb-{{ draft.id }}">
+          {% if draft.status == 'draft_ready' %}Draft ready
+          {% elif draft.status == 'scheduled' %}Scheduled
+          {% elif draft.status == 'posted' %}Posted ✓
+          {% else %}Needs post{% endif %}
+        </span>
+        <div class="ec-plat-actions">
+          <button class="btn-copy-small" onclick="copyDraftById({{ draft.id }}, {{ draft.content|tojson }}, this)">Copy</button>
+          {% if platform in ('facebook', 'instagram') %}
+          <button class="btn-canva-small" onclick="designInCanvaByPlatform('{{ platform }}', {{ draft.content|tojson }})">Canva</button>
+          {% endif %}
+          <button class="btn-mark-posted" onclick="markPosted({{ draft.id }}, this)" {% if draft.status == 'posted' %}disabled{% endif %}>
+            {% if draft.status == 'posted' %}Posted{% else %}Mark posted{% endif %}
+          </button>
+        </div>
+        {% if expanded and draft.photo_brief %}
+        <div class="ec-photo-brief">
+          <span class="photo-brief-icon">📷</span>
+          <span class="photo-brief-text">{{ draft.photo_brief }}</span>
+        </div>
+        {% endif %}
+      {% else %}
+        <span class="status-badge needs_post">Needs post</span>
+        <button class="btn-gen-small" onclick="openEventFromDash({{ ev.id }}, {{ ev.title|tojson }}, {{ ev.description|tojson }}, '{{ ev.date.isoformat() }}', '{{ ev.category }}')">Generate</button>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endmacro %}
+
+{% block scripts %}
+<script>const CURRENT_YEAR={{ today.year }}; const CURRENT_MONTH={{ today.month }};</script>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+{% endblock %}

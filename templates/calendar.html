@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% block title %}{{ month_name }} {{ year }}{% endblock %}
+
+{% block content %}
+<div class="cal-layout">
+
+  <!-- ── Left: Calendar ───────────────────────────────────────────────── -->
+  <div class="cal-main" id="calMain">
+
+    <!-- Toolbar -->
+    <div class="cal-toolbar">
+      <div class="cal-nav">
+        <a href="{{ url_for('calendar_view', year=prev_year, month=prev_month) }}" class="cal-nav-btn">‹</a>
+        <h1 class="cal-month-title">{{ month_name }} {{ year }}</h1>
+        <a href="{{ url_for('calendar_view', year=next_year, month=next_month) }}" class="cal-nav-btn">›</a>
+      </div>
+      <div class="cal-actions">
+        <button class="btn-import" id="importBtn" title="Import school calendar from PDF, Word, or CSV">
+          ↑ Import calendar
+        </button>
+        <button class="btn-add" id="addEventBtn">+ Add event</button>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="cal-legend">
+      <span class="legend-chip holiday">Holiday</span>
+      <span class="legend-chip admissions">Admissions</span>
+      <span class="legend-chip academic">Academic</span>
+      <span class="legend-chip community">Community</span>
+      <span class="legend-chip achievement">Achievement</span>
+    </div>
+
+    <!-- Calendar Grid -->
+    <div class="cal-grid-wrap">
+      <div class="cal-grid">
+        <div class="cal-dow">Sun</div>
+        <div class="cal-dow">Mon</div>
+        <div class="cal-dow">Tue</div>
+        <div class="cal-dow">Wed</div>
+        <div class="cal-dow">Thu</div>
+        <div class="cal-dow">Fri</div>
+        <div class="cal-dow">Sat</div>
+
+        {% for week in cal_grid %}
+          {% for day in week %}
+            {% if day == 0 %}
+              <div class="cal-cell empty"></div>
+            {% else %}
+              {% set is_today = (year == today.year and month == today.month and day == today.day) %}
+              <div class="cal-cell {% if is_today %}today{% endif %}" data-day="{{ day }}">
+                <div class="cal-day-num {% if is_today %}today-num{% endif %}">{{ day }}</div>
+                {% if day in events_by_day %}
+                  {% for ev in events_by_day[day] %}
+                    <div class="cal-event {{ ev.category }}"
+                         data-id="{{ ev.id }}"
+                         data-title="{{ ev.title | e }}"
+                         data-desc="{{ ev.description | e }}"
+                         data-date="{{ ev.date.isoformat() }}"
+                         data-category="{{ ev.category }}"
+                         onclick="openEvent(this)"
+                         title="{{ ev.title }}">
+                      {{ ev.title }}
+                    </div>
+                  {% endfor %}
+                {% endif %}
+              </div>
+            {% endif %}
+          {% endfor %}
+        {% endfor %}
+      </div>
+    </div>
+
+  </div><!-- /cal-main -->
+
+  <!-- ── Right: Generator Panel ───────────────────────────────────────── -->
+  <div class="gen-panel" id="genPanel">
+    <div class="gen-panel-inner">
+
+      <button class="gen-close" onclick="closePanel()">✕ Close</button>
+
+      <!-- Event Info -->
+      <div class="gen-event-info" id="genEventInfo">
+        <div class="gen-event-category" id="genCategory"></div>
+        <h2 class="gen-event-title" id="genTitle"></h2>
+        <div class="gen-event-date" id="genDate"></div>
+        <p class="gen-event-desc" id="genDesc"></p>
+        <div class="gen-event-actions">
+          <button class="btn-edit-event" id="btnEditEvent" onclick="openEditModal()">Edit event</button>
+          <button class="btn-delete-event" id="btnDeleteEvent" onclick="deleteEvent()">Delete</button>
+        </div>
+      </div>
+
+      <!-- Generator -->
+      <div class="gen-section">
+        <div class="gen-section-label">Generate social media posts</div>
+        <div class="gen-section-sub">Select platforms, then click Generate. Copy each draft and paste directly into the platform.</div>
+
+        <div class="gen-platforms">
+          <label class="plat-toggle active" data-platform="facebook">
+            <input type="checkbox" value="facebook" checked>
+            <span class="plat-icon">f</span> Facebook
+          </label>
+          <label class="plat-toggle active" data-platform="instagram">
+            <input type="checkbox" value="instagram" checked>
+            <span class="plat-icon">📷</span> Instagram
+          </label>
+          <label class="plat-toggle active" data-platform="linkedin">
+            <input type="checkbox" value="linkedin" checked>
+            <span class="plat-icon">in</span> LinkedIn
+          </label>
+          <label class="plat-toggle" data-platform="x">
+            <input type="checkbox" value="x">
+            <span class="plat-icon">𝕏</span> X / Twitter
+          </label>
+          <label class="plat-toggle active" data-platform="classdojo">
+            <input type="checkbox" value="classdojo" checked>
+            <span class="plat-icon">🏫</span> ClassDojo
+          </label>
+        </div>
+
+        <div class="gen-tone-row">
+          <label class="gen-tone-label">Tone override <span class="gen-tone-hint">(optional)</span></label>
+          <input type="text" class="gen-tone-input" id="genToneOverride"
+                 placeholder="e.g. more celebratory, aimed at new families, include enrollment link">
+        </div>
+
+        <button class="btn-generate" id="btnGenerate" onclick="generateDrafts()">
+          Generate drafts
+        </button>
+      </div>
+
+      <!-- Draft Results -->
+      <div class="gen-results" id="genResults"></div>
+
+    </div>
+  </div><!-- /gen-panel -->
+
+</div><!-- /cal-layout -->
+
+<!-- ── Import Drop Zone ────────────────────────────────────────────────── -->
+<div class="import-overlay" id="importOverlay" onclick="closeImport()">
+  <div class="import-box" onclick="event.stopPropagation()">
+    <div class="import-box-header">Import Calendar</div>
+    <div class="import-drop-zone" id="importDropZone">
+      <div class="import-drop-icon">📄</div>
+      <div class="import-drop-title">Drop your school calendar here</div>
+      <div class="import-drop-sub">Supports PDF, Word (.docx), CSV, or TXT</div>
+      <label class="btn-browse">
+        Browse files
+        <input type="file" id="importFileInput" accept=".pdf,.docx,.csv,.txt" style="display:none">
+      </label>
+    </div>
+    <div class="import-progress" id="importProgress" style="display:none">
+      <div class="import-spinner"></div>
+      <span>Reading your file and extracting events…</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── Import Review Modal ─────────────────────────────────────────────── -->
+<div class="modal-overlay" id="reviewOverlay" onclick="closeReview()">
+  <div class="modal-box review-box" onclick="event.stopPropagation()">
+    <div class="modal-header">Review extracted events</div>
+    <div class="modal-sub" id="reviewSub"></div>
+    <div class="review-list" id="reviewList"></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeReview()">Cancel</button>
+      <button class="btn-confirm" id="btnConfirmImport" onclick="confirmImport()">Add events</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Add / Edit Event Modal ─────────────────────────────────────────── -->
+<div class="modal-overlay" id="eventModalOverlay" onclick="closeEventModal()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-header" id="eventModalTitle">Add event</div>
+    <div class="modal-body">
+      <input type="hidden" id="editEventId">
+      <div class="form-group">
+        <label class="form-label">Title *</label>
+        <input class="form-control" type="text" id="evTitle" placeholder="e.g. Spring Picture Day">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Date *</label>
+        <input class="form-control" type="date" id="evDate">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <select class="form-control" id="evCategory">
+          <option value="community">Community</option>
+          <option value="academic">Academic</option>
+          <option value="admissions">Admissions</option>
+          <option value="achievement">Achievement</option>
+          <option value="holiday">Holiday</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description <span style="font-weight:400;color:#888">(optional — helps generate better posts)</span></label>
+        <textarea class="form-control" id="evDesc" rows="3"
+                  placeholder="Add any context that would help write better social posts…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeEventModal()">Cancel</button>
+      <button class="btn-confirm" onclick="saveEvent()">Save event</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast ──────────────────────────────────────────────────────────── -->
+<div class="toast" id="toast"></div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Pass server-rendered data to JS
+  const CURRENT_YEAR  = {{ year }};
+  const CURRENT_MONTH = {{ month }};
+</script>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+{% endblock %}

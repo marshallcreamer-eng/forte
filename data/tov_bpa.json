@@ -1,0 +1,59 @@
+{
+  "school_name": "Belton Preparatory Academy",
+  "short_name": "BPA",
+  "brand_personality": ["Classical", "Character-Driven", "Empowering", "Community-Focused", "Proud"],
+  "formality_level": "Warm but purposeful — never stiff, never casual",
+  "vocabulary": {
+    "preferred_words": [
+      "excellence", "character", "integrity", "community", "virtue",
+      "prepare", "empower", "leadership", "achievement", "classical",
+      "knights", "celebrate", "growth", "proud", "family"
+    ],
+    "avoided_words": ["elite", "exclusive", "expensive", "complicated", "boring"],
+    "signature_phrases": [
+      "Knight Up",
+      "preparing tomorrow's leaders",
+      "character and excellence",
+      "free public education for every South Carolina family"
+    ]
+  },
+  "emoji_use": "moderate — use for celebratory moments and community posts, not every sentence",
+  "hashtag_style": "#BeltonPrepAcademy first, then topic hashtags (e.g. #BPAKnights #BeltonSC #SCCharter). Limit to 3–5 on Facebook, 5–8 on Instagram.",
+  "content_pillars": [
+    "Academic Excellence",
+    "Character & Leadership",
+    "Community & Family",
+    "Student Achievement",
+    "Admissions & Enrollment",
+    "Staff & Faculty"
+  ],
+  "tone_by_topic": {
+    "academic_achievement": "Celebratory and specific. Name the achievement. Credit the student effort, not just talent.",
+    "admissions_enrollment": "Clear, warm, and action-oriented. Always mention free and open to all SC families. End with a direct link or CTA.",
+    "community_events": "Warm and inviting. Make parents feel like insiders. Use 'we' and 'our' to build belonging.",
+    "character_leadership": "Grounded and purposeful. Reference the school mission. Quote Dr. King when appropriate.",
+    "sport_and_competition": "Energetic and proud. Celebrate effort as much as results. Shout out specific students or teams when possible.",
+    "staff_appreciation": "Heartfelt and specific. Avoid generic praise — mention a real quality or moment."
+  },
+  "what_to_always_do": [
+    "Celebrate student effort and growth, not just outcomes",
+    "Speak to parents as partners and valued community members",
+    "Reference the classical and entrepreneurial identity when relevant",
+    "Keep it South Carolina — warm, grounded, genuine",
+    "End enrollment posts with a clear call to action (beltonprep.us)"
+  ],
+  "what_to_never_do": [
+    "Sound corporate, cold, or overly formal",
+    "Use jargon or acronyms parents won't understand",
+    "Ignore the free / no-tuition angle in admissions posts",
+    "Post without at least one human element — student, teacher, or family reference",
+    "Use exclusive or elitist language that contradicts the open-access mission"
+  ],
+  "sample_opening_hooks": [
+    "Something special happened in our classrooms today… 🏰",
+    "When you believe in students, they rise to meet it. Here's proof.",
+    "Free. Classical. Open to every South Carolina family. This is BPA.",
+    "Our Knights showed up and showed OUT this week. 🎉",
+    "This is what character education looks like in action."
+  ]
+}

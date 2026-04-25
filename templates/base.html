@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Forte{% endblock %} — Forte by Automatey</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- Header -->
+  <header class="f-header">
+    <div class="f-header-brand">
+      <div class="f-logo-mark">♪</div>
+      <div class="f-wordmark">
+        <div class="f-product">FORTE</div>
+        <div class="f-by">by Automatey</div>
+      </div>
+    </div>
+    <div class="f-header-divider"></div>
+    <div class="f-school-name">Belton Preparatory Academy</div>
+    <div style="flex:1"></div>
+    <div class="f-header-user">
+      <div class="f-avatar">{{ current_user.initials }}</div>
+      <span class="f-user-name">{{ current_user.name }}</span>
+      <a href="{{ url_for('logout') }}" class="f-logout">Sign out</a>
+    </div>
+  </header>
+
+  <!-- Flash messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-stack">
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- Main content -->
+  <main class="f-main">
+    {% block content %}{% endblock %}
+  </main>
+
+</div>
+{% block scripts %}{% endblock %}
+</body>
+</html>

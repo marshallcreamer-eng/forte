@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In — Forte by Automatey</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="login-body">
+
+<div class="login-wrap">
+  <div class="login-brand">
+    <div class="login-logo-mark">♪</div>
+    <div class="login-product">FORTE</div>
+    <div class="login-tagline">Content Creator for Belton Preparatory Academy</div>
+  </div>
+
+  <div class="login-card">
+    <div class="login-card-header">Sign in to your account</div>
+    <div class="login-card-body">
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}{% for msg in messages %}
+          <div class="flash-login">{{ msg }}</div>
+        {% endfor %}{% endif %}
+      {% endwith %}
+
+      <form method="POST" action="{{ url_for('login') }}">
+        <div class="form-group">
+          <label class="form-label" for="email">Email address</label>
+          <input class="form-control" type="email" id="email" name="email"
+                 placeholder="you@beltonprep.us" required autofocus>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <input class="form-control" type="password" id="password" name="password"
+                 placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn-login">Sign in →</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="login-footer">
+    Forte by Automatey &nbsp;·&nbsp; Social Media Content for BPA Knights
+  </div>
+</div>
+
+</body>
+</html>
