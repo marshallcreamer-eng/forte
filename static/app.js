@@ -107,34 +107,41 @@ function showEmptyState() {
 // ── Day click ─────────────────────────────────────────────────────────────
 
 function openDay(evt, cell) {
-  // Only fire on the cell background, not on event chips (they stopPropagation)
   const dateStr = cell.dataset.date;
   if (!dateStr) return;
 
-  const eventChips = cell.querySelectorAll('.cal-event');
+  // Read events from data attributes on the cell (set by Jinja2)
+  const evCount = parseInt(cell.dataset.evCount || '0');
+  const cellEvents = [];
+  for (let i = 0; i < evCount; i++) {
+    cellEvents.push({
+      id:       cell.dataset[`ev${i}Id`],
+      title:    cell.dataset[`ev${i}Title`],
+      desc:     cell.dataset[`ev${i}Desc`],
+      category: cell.dataset[`ev${i}Category`],
+      date:     dateStr,
+    });
+  }
+
   const friendlyDate = formatDate(dateStr);
 
-  // Populate day header
   document.getElementById('genDayDate').textContent = friendlyDate;
-  document.getElementById('genDaySub').textContent  = eventChips.length
-    ? `${eventChips.length} event${eventChips.length > 1 ? 's' : ''} on this day — click one to view its content`
+  document.getElementById('genDaySub').textContent  = cellEvents.length
+    ? `${cellEvents.length} event${cellEvents.length > 1 ? 's' : ''} — click one or describe something new below`
     : 'Nothing scheduled — let\'s create something';
 
-  // Populate event list
   const container = document.getElementById('genDayEvents');
   container.innerHTML = '';
   const divider = document.getElementById('genDayDivider');
 
-  if (eventChips.length) {
-    eventChips.forEach(chip => {
+  if (cellEvents.length) {
+    cellEvents.forEach(ev => {
       const row = document.createElement('div');
       row.className = 'gen-day-event-row';
       row.innerHTML = `
-        <div>
-          <div class="gen-day-event-name">${escHtml(chip.dataset.title)}</div>
-        </div>
-        <span class="gen-day-event-cat ${chip.dataset.category}">${capFirst(chip.dataset.category)}</span>`;
-      row.onclick = () => openEvent(chip);
+        <div class="gen-day-event-name">${escHtml(ev.title)}</div>
+        <span class="gen-day-event-cat ${ev.category}">${capFirst(ev.category)}</span>`;
+      row.onclick = () => openEventFromData(ev);
       container.appendChild(row);
     });
     divider.style.display = '';
@@ -142,24 +149,31 @@ function openDay(evt, cell) {
     divider.style.display = 'none';
   }
 
-  // Pre-fill freeform placeholder with the date
   const ta = document.getElementById('genDayFreeformText');
-  if (ta) {
-    ta.value = '';
-    ta.placeholder = `What's happening at BPA on ${friendlyDate.split(',')[0]}?`;
-  }
+  if (ta) { ta.value = ''; ta.placeholder = `What's happening at BPA on ${friendlyDate.split(',')[0]}?`; }
 
-  // Clear previous results
   const results = document.getElementById('genDayFreeformResults');
   if (results) results.innerHTML = '';
 
-  // Switch to day state
+  // Highlight selected day
+  document.querySelectorAll('.cal-cell.selected').forEach(c => c.classList.remove('selected'));
+  cell.classList.add('selected');
+
   ['genEmptyState','genEventState'].forEach(id => {
     const el = document.getElementById(id); if (el) el.style.display = 'none';
   });
   const dayState = document.getElementById('genDayState');
   if (dayState) dayState.style.display = '';
   _setPanelOpen(true);
+}
+
+// Open event from data object (used by day-click event list)
+async function openEventFromData(ev) {
+  // Build a fake chip-like element and reuse openEvent
+  const fake = {
+    dataset: { id: ev.id, title: ev.title, desc: ev.desc, date: ev.date, category: ev.category }
+  };
+  await openEvent(fake);
 }
 
 async function generateDayFreeform() {

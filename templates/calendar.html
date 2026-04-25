@@ -49,23 +49,38 @@
             {% else %}
               {% set is_today = (year == today.year and month == today.month and day == today.day) %}
               {% set date_str = '%04d-%02d-%02d'|format(year, month, day) %}
-              <div class="cal-cell {% if is_today %}today{% endif %}"
+              {% set day_events = events_by_day.get(day, []) %}
+              <div class="cal-cell {% if is_today %}today{% endif %} {% if day_events %}has-events{% endif %}"
                    data-day="{{ day }}" data-date="{{ date_str }}"
-                   onclick="openDay(event, this)">
+                   onclick="openDay(event, this)"
+                   {% for ev in day_events %}
+                   data-ev-{{ loop.index0 }}-id="{{ ev.id }}"
+                   data-ev-{{ loop.index0 }}-title="{{ ev.title | e }}"
+                   data-ev-{{ loop.index0 }}-desc="{{ ev.description | e }}"
+                   data-ev-{{ loop.index0 }}-category="{{ ev.category }}"
+                   {% endfor %}
+                   data-ev-count="{{ day_events|length }}">
                 <div class="cal-day-num {% if is_today %}today-num{% endif %}">{{ day }}</div>
-                {% if day in events_by_day %}
-                  {% for ev in events_by_day[day] %}
-                    <div class="cal-event {{ ev.category }}"
-                         data-id="{{ ev.id }}"
-                         data-title="{{ ev.title | e }}"
-                         data-desc="{{ ev.description | e }}"
-                         data-date="{{ ev.date.isoformat() }}"
-                         data-category="{{ ev.category }}"
-                         onclick="event.stopPropagation(); openEvent(this)"
-                         title="{{ ev.title }}">
-                      {{ ev.title }}
-                    </div>
+                <!-- Full view: event chips -->
+                {% if day_events %}
+                <div class="cal-chips">
+                  {% for ev in day_events %}
+                  <div class="cal-event {{ ev.category }}"
+                       data-id="{{ ev.id }}"
+                       data-title="{{ ev.title | e }}"
+                       data-desc="{{ ev.description | e }}"
+                       data-date="{{ ev.date.isoformat() }}"
+                       data-category="{{ ev.category }}"
+                       onclick="event.stopPropagation(); openEvent(this)"
+                       title="{{ ev.title }}">{{ ev.title }}</div>
                   {% endfor %}
+                </div>
+                <!-- Compact view: coloured dots (shown via CSS when panel is open) -->
+                <div class="cal-dots">
+                  {% for ev in day_events[:4] %}
+                  <span class="cal-dot {{ ev.category }}"></span>
+                  {% endfor %}
+                </div>
                 {% endif %}
               </div>
             {% endif %}
