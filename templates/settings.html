@@ -13,6 +13,7 @@
   <div class="settings-tabs">
     <button class="stab active" onclick="showTab('categories', this)">Event Categories</button>
     <button class="stab" onclick="showTab('tov', this)">Tone of Voice</button>
+    <button class="stab" onclick="showTab('brand', this)">Brand Assets</button>
   </div>
 
   <!-- ── Event Categories ──────────────────────────────────────────────── -->
@@ -213,6 +214,48 @@
 
   </div>
 
+  <!-- ── Brand Assets ─────────────────────────────────────────────────── -->
+  <div class="settings-panel" id="tab-brand" style="display:none">
+
+    <div class="settings-section-header">
+      <div>
+        <div class="settings-section-title">Brand Assets</div>
+        <div class="settings-section-sub">
+          Upload your logo, brand colours reference, and example posts. These help Forte generate
+          better Canva designs and keep content visually consistent. The BPA logo is pre-loaded.
+        </div>
+      </div>
+    </div>
+
+    <!-- Asset grid -->
+    <div class="brand-asset-grid" id="brandAssetGrid">
+      {% for asset in brand_assets %}
+      <div class="brand-asset-card" id="ba-{{ asset.filename | replace('.','_') }}">
+        {% if asset.filename.rsplit('.',1)[-1].lower() in ('jpg','jpeg','png','gif','webp','svg') %}
+        <img src="{{ asset.url }}" alt="{{ asset.filename }}" class="brand-asset-img">
+        {% else %}
+        <div class="brand-asset-file-icon">📄</div>
+        {% endif %}
+        <div class="brand-asset-name">{{ asset.filename }}</div>
+        <button class="brand-asset-delete" onclick="deleteBrandAsset('{{ asset.filename }}', this)" title="Remove">✕</button>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Upload new asset -->
+    <div class="brand-upload-zone" id="brandUploadZone">
+      <div class="brand-upload-icon">+</div>
+      <div class="brand-upload-title">Upload brand asset</div>
+      <div class="brand-upload-sub">Logo, brand colours reference, or example posts you like<br>JPG, PNG, SVG, PDF accepted</div>
+      <label class="btn-confirm brand-upload-btn">
+        Choose file
+        <input type="file" id="brandFileInput" accept="image/*,.pdf,.svg"
+               style="display:none" onchange="uploadBrandAsset(this)">
+      </label>
+    </div>
+
+  </div>
+
 </div>
 
 <div class="toast" id="toast"></div>
@@ -292,6 +335,39 @@ async function deleteCategory(id) {
     if (!resp.ok) throw new Error((await resp.json()).error);
     document.getElementById(`cat-${id}`)?.remove();
     showToast('Category deleted');
+  } catch (e) { showToast('Error: ' + e.message); }
+}
+
+async function uploadBrandAsset(input) {
+  const file = input.files[0]; if (!file) return;
+  const fd = new FormData(); fd.append('file', file);
+  try {
+    const resp = await fetch('/api/brand/assets', { method: 'POST', body: fd });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error);
+    const grid = document.getElementById('brandAssetGrid');
+    const card = document.createElement('div');
+    const safeId = data.filename.replace(/\./g, '_');
+    card.className = 'brand-asset-card'; card.id = `ba-${safeId}`;
+    const isImg = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(data.filename);
+    card.innerHTML = `
+      ${isImg ? `<img src="${data.url}" alt="${data.filename}" class="brand-asset-img">` : '<div class="brand-asset-file-icon">📄</div>'}
+      <div class="brand-asset-name">${data.filename}</div>
+      <button class="brand-asset-delete" onclick="deleteBrandAsset('${data.filename}', this)" title="Remove">✕</button>`;
+    grid.appendChild(card);
+    input.value = '';
+    showToast('Asset uploaded');
+  } catch (e) { showToast('Error: ' + e.message); }
+}
+
+async function deleteBrandAsset(filename, btn) {
+  if (!confirm(`Remove "${filename}"?`)) return;
+  try {
+    const resp = await fetch(`/api/brand/assets/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+    if (!resp.ok) throw new Error((await resp.json()).error);
+    const safeId = filename.replace(/\./g, '_');
+    document.getElementById(`ba-${safeId}`)?.remove();
+    showToast('Asset removed');
   } catch (e) { showToast('Error: ' + e.message); }
 }
 

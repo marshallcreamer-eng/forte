@@ -1,10 +1,11 @@
 from flask import (Flask, render_template, redirect, url_for,
-                   request, flash, jsonify)
+                   request, flash, jsonify, send_from_directory)
 from flask_login import (LoginManager, login_user, logout_user,
                          login_required, current_user)
 from datetime import date, datetime, timedelta
+from werkzeug.utils import secure_filename
 import calendar as cal_module
-import json, os, io
+import json, os, io, uuid, shutil
 
 from config import Config
 from models import db, User, Event, Draft, Category, InsightRun
@@ -520,7 +521,25 @@ def create_app():
                 tov = json.load(f)
         except Exception:
             pass
-        return render_template('settings.html', categories=categories, tov=tov)
+
+        # Brand assets
+        brand_dir = os.path.join(app.root_path, 'data', 'uploads', 'brand')
+        os.makedirs(brand_dir, exist_ok=True)
+
+        # Pre-populate with BPA logo on first run
+        bpa_logo_src = os.path.join(app.root_path, 'static', 'bpa-logo.png')
+        bpa_logo_dst = os.path.join(brand_dir, 'bpa-logo.png')
+        if os.path.exists(bpa_logo_src) and not os.path.exists(bpa_logo_dst):
+            shutil.copy2(bpa_logo_src, bpa_logo_dst)
+
+        brand_assets = [
+            {'filename': f, 'url': url_for('serve_upload', filename=f'brand/{f}')}
+            for f in sorted(os.listdir(brand_dir))
+            if not f.startswith('.')
+        ]
+
+        return render_template('settings.html', categories=categories, tov=tov,
+                               brand_assets=brand_assets)
 
     # ── API: Categories CRUD ───────────────────────────────────────────────
 
@@ -588,6 +607,62 @@ def create_app():
             'cat_colors':       {c.slug: c.color for c in cats},
             'canva_templates':  _load_canva_templates(app),
         }
+
+    # ── File uploads ───────────────────────────────────────────────────────
+
+    UPLOAD_DIR = os.path.join(app.root_path, 'data', 'uploads')
+
+    @app.route('/uploads/<path:filename>')
+    @login_required
+    def serve_upload(filename):
+        return send_from_directory(UPLOAD_DIR, filename)
+
+    @app.route('/api/photos', methods=['POST'])
+    @login_required
+    def api_upload_photo():
+        if 'file' not in request.files:
+            return jsonify({'error': 'no file'}), 400
+        f = request.files['file']
+        ext = (f.filename or '').rsplit('.', 1)[-1].lower()
+        if ext not in ('jpg', 'jpeg', 'png', 'gif', 'webp', 'heic'):
+            return jsonify({'error': 'image files only (jpg, png, gif, webp)'}), 400
+        event_id = request.form.get('event_id', 'freeform')
+        filename = f'{event_id}_{uuid.uuid4().hex[:8]}.{ext}'
+        photos_dir = os.path.join(UPLOAD_DIR, 'photos')
+        os.makedirs(photos_dir, exist_ok=True)
+        f.save(os.path.join(photos_dir, filename))
+        return jsonify({'ok': True, 'filename': filename,
+                        'url': url_for('serve_upload', filename=f'photos/{filename}')})
+
+    @app.route('/api/photos/<filename>', methods=['DELETE'])
+    @login_required
+    def api_delete_photo(filename):
+        path = os.path.join(UPLOAD_DIR, 'photos', secure_filename(filename))
+        if os.path.exists(path): os.remove(path)
+        return jsonify({'ok': True})
+
+    @app.route('/api/brand/assets', methods=['POST'])
+    @login_required
+    def api_upload_brand_asset():
+        if 'file' not in request.files:
+            return jsonify({'error': 'no file'}), 400
+        f = request.files['file']
+        ext = (f.filename or '').rsplit('.', 1)[-1].lower()
+        if ext not in ('jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'pdf'):
+            return jsonify({'error': 'unsupported file type'}), 400
+        brand_dir = os.path.join(UPLOAD_DIR, 'brand')
+        os.makedirs(brand_dir, exist_ok=True)
+        filename = secure_filename(f.filename)
+        f.save(os.path.join(brand_dir, filename))
+        return jsonify({'ok': True, 'filename': filename,
+                        'url': url_for('serve_upload', filename=f'brand/{filename}')})
+
+    @app.route('/api/brand/assets/<filename>', methods=['DELETE'])
+    @login_required
+    def api_delete_brand_asset(filename):
+        path = os.path.join(UPLOAD_DIR, 'brand', secure_filename(filename))
+        if os.path.exists(path): os.remove(path)
+        return jsonify({'ok': True})
 
     @app.route('/health')
     def health():

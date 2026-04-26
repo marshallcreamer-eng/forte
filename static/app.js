@@ -5,6 +5,52 @@ let activeEvent     = null;   // {id, title, desc, date, category}
 let lastEventText   = '';     // last text sent to generate — used by Regenerate
 let importedEvents  = [];     // events waiting for review
 let contentType     = 'photo'; // text | photo | video
+let currentPhoto    = null;   // {url, filename, downloadUrl} — uploaded post photo
+
+// ── Photo upload ──────────────────────────────────────────────────────────
+
+async function handlePhotoUpload(input) {
+  const file = input.files[0]; if (!file) return;
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('event_id', activeEvent ? activeEvent.id : 'freeform');
+
+  try {
+    const resp = await fetch('/api/photos', { method: 'POST', body: fd });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error);
+
+    currentPhoto = { url: data.url, filename: data.filename };
+
+    // Show preview
+    const preview = document.getElementById('photoUploadPreview');
+    const empty   = document.getElementById('photoUploadEmpty');
+    const img     = document.getElementById('photoPreviewImg');
+    if (img) img.src = data.url;
+    if (empty)   empty.style.display   = 'none';
+    if (preview) preview.style.display = 'flex';
+
+    showToast('Photo added — it will appear in your Canva modal');
+  } catch (e) {
+    showToast('Upload error: ' + e.message);
+    input.value = '';
+  }
+}
+
+async function removePhoto() {
+  if (currentPhoto) {
+    await fetch(`/api/photos/${encodeURIComponent(currentPhoto.filename)}`, { method: 'DELETE' }).catch(() => {});
+    currentPhoto = null;
+  }
+  const preview = document.getElementById('photoUploadPreview');
+  const empty   = document.getElementById('photoUploadEmpty');
+  if (preview) preview.style.display = 'none';
+  if (empty)   empty.style.display   = '';
+  const img = document.getElementById('photoPreviewImg');
+  if (img) img.src = '';
+  const finput = document.getElementById('photoFileInput');
+  if (finput) finput.value = '';
+}
 
 function setContentType(type, btn) {
   contentType = type;
@@ -494,7 +540,6 @@ function copyDraft(btn) {
 function _openCanvaModal(platform, content) {
   _copyText(content);
 
-  // Use BPA template if available, fall back to generic gallery
   const templates = (typeof CANVA_TEMPLATES !== 'undefined') ? CANVA_TEMPLATES : {};
   const tpl = templates[platform];
   const url = tpl ? tpl.url : {
@@ -502,8 +547,24 @@ function _openCanvaModal(platform, content) {
     instagram: 'https://www.canva.com/create/instagram-posts/',
   }[platform] || 'https://www.canva.com/';
 
-  const btn = document.getElementById('canvaOpenBtn');
-  if (btn) btn.href = url;
+  const openBtn = document.getElementById('canvaOpenBtn');
+  if (openBtn) openBtn.href = url;
+
+  // Show/update uploaded photo section
+  const photoSection  = document.getElementById('canvaPhotoSection');
+  const photoThumb    = document.getElementById('canvaPhotoThumb');
+  const photoDownload = document.getElementById('canvaPhotoDownload');
+  const step3         = document.getElementById('canvaStep3');
+
+  if (currentPhoto && photoSection) {
+    if (photoThumb)    photoThumb.src  = currentPhoto.url;
+    if (photoDownload) { photoDownload.href = currentPhoto.url; photoDownload.download = currentPhoto.filename; }
+    photoSection.style.display = '';
+    if (step3) step3.innerHTML = 'Click the <strong>photo area</strong> in Canva → upload <strong>the photo above</strong> (click ↓ Download first)';
+  } else if (photoSection) {
+    photoSection.style.display = 'none';
+    if (step3) step3.innerHTML = 'Click the <strong>photo area</strong> and upload a photo from school';
+  }
 
   const overlay = document.getElementById('canvaOverlay');
   if (overlay) overlay.classList.add('open');

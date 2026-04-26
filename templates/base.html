@@ -101,12 +101,24 @@
       <button class="canva-modal-close" onclick="closeCanvaModal()">✕</button>
     </div>
     <h3 class="canva-modal-title">Open your BPA template in Canva</h3>
-    <p class="canva-modal-sub">Follow these 4 steps — takes about 2 minutes:</p>
+    <p class="canva-modal-sub">Follow these steps — takes about 2 minutes:</p>
+
+    <!-- Uploaded photo (shown when a photo was added) -->
+    <div class="canva-photo-section" id="canvaPhotoSection" style="display:none">
+      <div class="canva-photo-header">Your photo for this post:</div>
+      <div class="canva-photo-row">
+        <img id="canvaPhotoThumb" src="" alt="Post photo" class="canva-photo-thumb">
+        <a id="canvaPhotoDownload" href="#" download class="canva-photo-download-btn">
+          ↓ Download photo
+        </a>
+      </div>
+    </div>
+
     <ol class="canva-steps">
       <li>Click <strong>"Open in Canva"</strong> below — the BPA template opens in a new tab</li>
       <li>Click on any <strong>text block</strong> in the design and paste your post <span class="canva-key">⌘V</span></li>
-      <li>Click the <strong>photo area</strong> and upload a photo from school</li>
-      <li>Click <strong>Share → Download</strong> and save as JPG or PNG — ready to post</li>
+      <li id="canvaStep3">Click the <strong>photo area</strong> and upload a photo from school</li>
+      <li>Click <strong>Share → Download</strong> → save as JPG or PNG — ready to post</li>
     </ol>
     <a class="canva-open-btn" id="canvaOpenBtn" href="#" target="_blank" rel="noopener"
        onclick="closeCanvaModal()">

@@ -211,6 +211,24 @@
               <button class="ct-btn" data-type="video" onclick="setContentType('video', this)">🎬 Video</button>
             </div>
           </div>
+          <!-- Photo upload -->
+          <div class="photo-upload-row">
+            <label class="gen-tone-label">Add a photo for this post <span class="gen-tone-hint">(optional — shown in Canva modal)</span></label>
+            <div class="photo-upload-area" id="photoUploadArea">
+              <div class="photo-upload-empty" id="photoUploadEmpty">
+                <label class="photo-upload-btn">
+                  📷 Upload photo
+                  <input type="file" id="photoFileInput" accept="image/*" style="display:none"
+                         onchange="handlePhotoUpload(this)">
+                </label>
+              </div>
+              <div class="photo-upload-preview" id="photoUploadPreview" style="display:none">
+                <img id="photoPreviewImg" src="" alt="Post photo">
+                <button class="photo-remove-btn" onclick="removePhoto()">✕ Remove</button>
+              </div>
+            </div>
+          </div>
+
           <button class="btn-generate" id="btnGenerate" onclick="generateDrafts()">Generate drafts</button>
         </div>
 
