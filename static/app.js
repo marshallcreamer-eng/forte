@@ -540,6 +540,7 @@ function copyDraft(btn) {
 function _openCanvaModal(platform, content) {
   _copyText(content);
 
+  // Use BPA template if available, fall back to Canva gallery
   const templates = (typeof CANVA_TEMPLATES !== 'undefined') ? CANVA_TEMPLATES : {};
   const tpl = templates[platform];
   const url = tpl ? tpl.url : {
@@ -549,22 +550,6 @@ function _openCanvaModal(platform, content) {
 
   const openBtn = document.getElementById('canvaOpenBtn');
   if (openBtn) openBtn.href = url;
-
-  // Show/update uploaded photo section
-  const photoSection  = document.getElementById('canvaPhotoSection');
-  const photoThumb    = document.getElementById('canvaPhotoThumb');
-  const photoDownload = document.getElementById('canvaPhotoDownload');
-  const step3         = document.getElementById('canvaStep3');
-
-  if (currentPhoto && photoSection) {
-    if (photoThumb)    photoThumb.src  = currentPhoto.url;
-    if (photoDownload) { photoDownload.href = currentPhoto.url; photoDownload.download = currentPhoto.filename; }
-    photoSection.style.display = '';
-    if (step3) step3.innerHTML = 'Click the <strong>photo area</strong> in Canva → upload <strong>the photo above</strong> (click ↓ Download first)';
-  } else if (photoSection) {
-    photoSection.style.display = 'none';
-    if (step3) step3.innerHTML = 'Click the <strong>photo area</strong> and upload a photo from school';
-  }
 
   const overlay = document.getElementById('canvaOverlay');
   if (overlay) overlay.classList.add('open');

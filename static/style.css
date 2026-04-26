@@ -1059,6 +1059,22 @@ textarea.form-control { resize: vertical; }
   color: var(--text-mid); vertical-align: middle;
 }
 
+/* Canva modal step blocks */
+.canva-step-block {
+  background: var(--grey-bg); border-radius: 10px;
+  padding: 14px 16px; margin-bottom: 10px;
+}
+.canva-step-num {
+  font-size: 11px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.4px; color: var(--navy); margin-bottom: 6px;
+}
+.canva-step-desc {
+  font-size: 13px; color: var(--text-mid); margin-bottom: 10px; line-height: 1.5;
+}
+.canva-photo-instruction {
+  font-size: 12px; color: var(--text-mid); line-height: 1.5; margin-bottom: 8px;
+}
+
 /* Photo in Canva modal */
 .canva-photo-section {
   background: var(--grey-bg); border-radius: 8px;
