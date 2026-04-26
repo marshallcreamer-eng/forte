@@ -180,9 +180,7 @@ async function generateDayFreeform() {
   const text = document.getElementById('genDayFreeformText')?.value.trim();
   if (!text) { showToast('Describe what\'s happening first.'); return; }
 
-  const platforms = Array.from(
-    document.querySelectorAll('#dayFreeformPlatGrid .plat-card.active input')
-  ).map(cb => cb.value);
+  const platforms = _getActivePlatforms();
   if (!platforms.length) { showToast('Select at least one platform.'); return; }
 
   const tone    = document.getElementById('genDayFreeformTone')?.value.trim();
@@ -302,9 +300,7 @@ async function generateFreeform() {
   const text = document.getElementById('genFreeformText')?.value.trim();
   if (!text) { showToast('Describe what\'s happening first.'); return; }
 
-  const platforms = Array.from(
-    document.querySelectorAll('#freeformPlatGrid .plat-card.active input')
-  ).map(cb => cb.value);
+  const platforms = _getActivePlatforms();
   if (!platforms.length) { showToast('Select at least one platform.'); return; }
 
   const tone    = document.getElementById('genFreeformTone')?.value.trim();
@@ -337,13 +333,8 @@ async function generateFreeform() {
 async function generateDrafts() {
   if (!activeEvent) return;
 
-  const platforms = Array.from(
-    document.querySelectorAll('.plat-card.active input')
-  ).map(cb => cb.value);
-
-  if (!platforms.length) {
-    showToast('Select at least one platform.'); return;
-  }
+  const platforms = _getActivePlatforms();
+  if (!platforms.length) { showToast('Select at least one platform.'); return; }
 
   const tone  = document.getElementById('genToneOverride').value.trim();
   const btn   = document.getElementById('btnGenerate');
@@ -731,6 +722,27 @@ async function confirmImport() {
 }
 
 // ── Utilities ─────────────────────────────────────────────────────────────
+
+function _getActivePlatforms() {
+  // Check each named state panel in priority order and query only its grid
+  const panels = [
+    { stateId: 'genEventState',  gridId: 'eventPlatGrid' },
+    { stateId: 'genDayState',    gridId: 'dayFreeformPlatGrid' },
+    { stateId: 'genEmptyState',  gridId: 'freeformPlatGrid' },
+  ];
+  for (const { stateId, gridId } of panels) {
+    const state = document.getElementById(stateId);
+    if (state && state.style.display !== 'none') {
+      const grid = document.getElementById(gridId);
+      if (grid) return Array.from(grid.querySelectorAll('.plat-card.active input')).map(c => c.value);
+    }
+  }
+  // Dashboard fallback — query only inside the open gen-panel
+  const panel = document.getElementById('genPanel');
+  const grid  = panel ? panel.querySelector('.plat-grid') : null;
+  if (grid) return Array.from(grid.querySelectorAll('.plat-card.active input')).map(c => c.value);
+  return [];
+}
 
 function _friendlyError(msg) {
   if (msg && (msg.includes('429') || msg.includes('quota') || msg.includes('RESOURCE_EXHAUSTED')))
