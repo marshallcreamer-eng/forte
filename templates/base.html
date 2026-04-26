@@ -93,6 +93,33 @@
   </main>
 
 </div>
+<!-- ── Canva Guidance Modal ────────────────────────────────────────────── -->
+<div class="canva-overlay" id="canvaOverlay" onclick="closeCanvaModal()">
+  <div class="canva-modal" onclick="event.stopPropagation()">
+    <div class="canva-modal-top">
+      <div class="canva-copied-badge">✓ Post text copied to your clipboard</div>
+      <button class="canva-modal-close" onclick="closeCanvaModal()">✕</button>
+    </div>
+    <h3 class="canva-modal-title">Open your BPA template in Canva</h3>
+    <p class="canva-modal-sub">Follow these 4 steps — takes about 2 minutes:</p>
+    <ol class="canva-steps">
+      <li>Click <strong>"Open in Canva"</strong> below — the BPA template opens in a new tab</li>
+      <li>Click on any <strong>text block</strong> in the design and paste your post <span class="canva-key">⌘V</span></li>
+      <li>Click the <strong>photo area</strong> and upload a photo from school</li>
+      <li>Click <strong>Share → Download</strong> and save as JPG or PNG — ready to post</li>
+    </ol>
+    <a class="canva-open-btn" id="canvaOpenBtn" href="#" target="_blank" rel="noopener"
+       onclick="closeCanvaModal()">
+      Open in Canva →
+    </a>
+  </div>
+</div>
+
+<!-- Pass Canva template URLs to JS -->
+<script>
+const CANVA_TEMPLATES = {{ canva_templates | tojson }};
+</script>
+
 {% block scripts %}{% endblock %}
 </body>
 </html>

@@ -500,40 +500,36 @@ function copyDraft(btn) {
 
 // ── Canva Design ──────────────────────────────────────────────────────────
 
-function designInCanva(platform, canvaType, btn) {
-  const content = btn.closest('.draft-card').querySelector('.draft-content').textContent;
+function _openCanvaModal(platform, content) {
   _copyText(content);
 
-  const urls = {
-    facebook_post:  'https://www.canva.com/create/facebook-posts/',
-    instagram_post: 'https://www.canva.com/create/instagram-posts/',
-    flyer:          'https://www.canva.com/create/flyers/',
-  };
-  const url = urls[canvaType] || 'https://www.canva.com/';
+  // Use BPA template if available, fall back to generic gallery
+  const templates = (typeof CANVA_TEMPLATES !== 'undefined') ? CANVA_TEMPLATES : {};
+  const tpl = templates[platform];
+  const url = tpl ? tpl.url : {
+    facebook:  'https://www.canva.com/create/facebook-posts/',
+    instagram: 'https://www.canva.com/create/instagram-posts/',
+  }[platform] || 'https://www.canva.com/';
 
-  // Use a real link element — avoids popup blockers
-  const a = document.createElement('a');
-  a.href = url; a.target = '_blank'; a.rel = 'noopener';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  const btn = document.getElementById('canvaOpenBtn');
+  if (btn) btn.href = url;
 
-  showToast('Text copied — paste it into your Canva design!');
+  const overlay = document.getElementById('canvaOverlay');
+  if (overlay) overlay.classList.add('open');
+}
+
+function closeCanvaModal() {
+  const overlay = document.getElementById('canvaOverlay');
+  if (overlay) overlay.classList.remove('open');
+}
+
+function designInCanva(platform, canvaType, btn) {
+  const content = btn.closest('.draft-card').querySelector('.draft-content').textContent;
+  _openCanvaModal(platform, content);
 }
 
 function designInCanvaByPlatform(platform, content) {
-  _copyText(content);
-  const urls = {
-    facebook:  'https://www.canva.com/create/facebook-posts/',
-    instagram: 'https://www.canva.com/create/instagram-posts/',
-  };
-  const a = document.createElement('a');
-  a.href = urls[platform] || 'https://www.canva.com/';
-  a.target = '_blank'; a.rel = 'noopener';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  showToast('Text copied — paste it into your Canva design!');
+  _openCanvaModal(platform, content);
 }
 
 // ── Platform Toggles ──────────────────────────────────────────────────────

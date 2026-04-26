@@ -567,15 +567,27 @@ def create_app():
         db.session.commit()
         return jsonify({'ok': True})
 
-    # ── Context processor — inject categories into all templates ───────────
+    # ── Context processor — inject categories + canva templates into all pages
+
+    def _load_canva_templates(app):
+        path = os.path.join(app.root_path, 'data', 'canva_templates.json')
+        try:
+            with open(path) as f:
+                return json.load(f)
+        except Exception:
+            return {}
 
     @app.context_processor
-    def inject_categories():
+    def inject_globals():
         try:
             cats = Category.query.order_by(Category.sort_order).all()
-            return {'categories': cats, 'cat_colors': {c.slug: c.color for c in cats}}
         except Exception:
-            return {'categories': [], 'cat_colors': {}}
+            cats = []
+        return {
+            'categories':       cats,
+            'cat_colors':       {c.slug: c.color for c in cats},
+            'canva_templates':  _load_canva_templates(app),
+        }
 
     @app.route('/health')
     def health():
