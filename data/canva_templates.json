@@ -1,12 +1,14 @@
 {
-  "facebook": {
-    "url": "https://www.canva.com/d/3_HoxNsYG2wdQ2u",
-    "title": "BPA Facebook Post",
-    "design_id": "DAHH7f9P8HM"
-  },
   "instagram": {
-    "url": "https://www.canva.com/d/FZ1MDjfLuPDi_2b",
-    "title": "BPA Instagram Post",
-    "design_id": "DAHH7e0zZao"
+    "url": "https://www.canva.com/d/pjIjkYd2DlmNZoa",
+    "title": "BPA Instagram Post — photo-forward with branded strip",
+    "design_id": "DAHIASDFTnQ",
+    "note": "Photo fills 85% of frame. Navy branded strip at bottom with BPA branding. Staff: click photo area to swap in their school photo."
+  },
+  "flyer": {
+    "url": "https://www.canva.com/d/3_HoxNsYG2wdQ2u",
+    "title": "BPA Announcement Flyer",
+    "design_id": "DAHH7f9P8HM",
+    "note": "Full-design template for admissions and major announcements."
   }
 }

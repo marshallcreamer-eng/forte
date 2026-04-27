@@ -434,12 +434,12 @@ function renderDraftCards(container, data) {
 
   const order = ['facebook', 'instagram', 'linkedin', 'x', 'classdojo', 'email'];
   const meta  = {
-    facebook:  { label: 'Facebook',    canva: 'facebook_post' },
-    instagram: { label: 'Instagram',   canva: 'instagram_post' },
-    linkedin:  { label: 'LinkedIn',    canva: null },
-    x:         { label: 'X / Twitter', canva: null },
-    classdojo: { label: 'ClassDojo',   canva: null },
-    email:     { label: 'Newsletter',  canva: null },
+    facebook:  { label: 'Facebook' },
+    instagram: { label: 'Instagram', canva: true },  // Only Instagram gets Canva
+    linkedin:  { label: 'LinkedIn' },
+    x:         { label: 'X / Twitter' },
+    classdojo: { label: 'ClassDojo' },
+    email:     { label: 'Newsletter' },
   };
   const bestTimes = data.best_times || {};
 
@@ -450,8 +450,9 @@ function renderDraftCards(container, data) {
     const card     = document.createElement('div');
     card.className = 'draft-card';
 
+    // Canva only on Instagram — other platforms just need Copy
     const canvaBtn = m.canva
-      ? `<button class="btn-canva" onclick="designInCanva('${platform}', '${m.canva}', this)">🎨 Canva</button>`
+      ? `<button class="btn-canva" onclick="designInCanva('${platform}', 'instagram_post', this)">Open in Canva</button>`
       : '';
     const btHtml = bt
       ? `<div class="draft-best-time">⏰ ${bt.days} · ${bt.time} <span class="bt-note">${bt.note}</span></div>`
@@ -558,6 +559,17 @@ function _openCanvaModal(platform, content) {
 function closeCanvaModal() {
   const overlay = document.getElementById('canvaOverlay');
   if (overlay) overlay.classList.remove('open');
+}
+
+function openFlyer(eventTitle) {
+  const templates = (typeof CANVA_TEMPLATES !== 'undefined') ? CANVA_TEMPLATES : {};
+  const url = templates.flyer ? templates.flyer.url : 'https://www.canva.com/create/flyers/';
+  if (eventTitle) _copyText(eventTitle);
+  const openBtn = document.getElementById('canvaOpenBtn');
+  if (openBtn) openBtn.href = url;
+  const overlay = document.getElementById('canvaOverlay');
+  if (overlay) overlay.classList.add('open');
+  showToast('Event title copied — paste it into the flyer');
 }
 
 function designInCanva(platform, canvaType, btn) {

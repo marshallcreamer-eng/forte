@@ -76,6 +76,9 @@
       onclick="openEventFromDash({{ ev.id }}, {{ ev.title|tojson }}, {{ ev.description|tojson }}, '{{ ev.date.isoformat() }}', '{{ ev.category }}')">
       {% if drafted_count == 0 %}Create posts →{% else %}View &amp; copy →{% endif %}
     </button>
+    {% if ev.category in ('admissions', 'achievement') %}
+    <button class="ecc-btn-flyer" onclick="openFlyer({{ ev.title|tojson }})">Create flyer</button>
+    {% endif %}
   </div>
 </div>
 {% endif %}

@@ -1848,3 +1848,12 @@ textarea.form-control { resize: vertical; }
   font-family: 'Inter', sans-serif; transition: background 0.15s;
 }
 .ecc-btn:hover { background: var(--navy-mid); }
+
+.ecc-btn-flyer {
+  padding: 8px 14px; white-space: nowrap;
+  background: var(--white); color: #7c3aed;
+  border: 1.5px solid #7c3aed; border-radius: 8px;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  font-family: 'Inter', sans-serif; transition: all 0.15s;
+}
+.ecc-btn-flyer:hover { background: #ede9fe; }
