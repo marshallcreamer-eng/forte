@@ -1381,6 +1381,47 @@ textarea.form-control { resize: vertical; }
 .tov-channel-name { font-size: 12px; font-weight: 800; color: var(--navy); margin-bottom: 6px; }
 .tov-channel-desc { font-size: 11px; color: var(--text-light); line-height: 1.6; }
 
+/* Editable TOV inputs */
+.tov-input {
+  width: 100%; padding: 9px 12px;
+  border: 1.5px solid var(--grey-border); border-radius: 7px;
+  font-size: 13px; font-family: 'Inter', sans-serif;
+  color: var(--text); background: var(--grey-bg);
+  transition: border-color 0.15s;
+}
+.tov-input:focus { outline: none; border-color: var(--navy); background: var(--white); }
+
+.tov-textarea {
+  width: 100%; padding: 9px 12px;
+  border: 1.5px solid var(--grey-border); border-radius: 7px;
+  font-size: 13px; font-family: 'Inter', sans-serif;
+  color: var(--text); background: var(--grey-bg);
+  resize: vertical; line-height: 1.5;
+}
+.tov-textarea:focus { outline: none; border-color: var(--navy); background: var(--white); }
+
+.tov-label {
+  display: block; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.3px;
+  color: var(--text-light); margin-bottom: 6px;
+}
+.tov-label.green { color: var(--green); }
+.tov-label.red   { color: var(--red); }
+
+.tov-block-hint {
+  font-size: 11px; color: var(--text-light); margin-top: 4px;
+}
+
+.tov-save-row {
+  display: flex; align-items: center; gap: 14px;
+  padding-top: 8px; padding-bottom: 24px;
+}
+.tov-save-btn { padding: 10px 24px; font-size: 14px; }
+
+.tov-save-status { font-size: 13px; color: var(--text-light); }
+.tov-save-status.success { color: var(--green); font-weight: 600; }
+.tov-save-status.error   { color: var(--red); }
+
 .tov-style-row { display: flex; gap: 40px; }
 .tov-style-label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-light); margin-bottom: 4px; }
 .tov-style-value { font-size: 13px; color: var(--text-mid); line-height: 1.6; }

@@ -87,126 +87,83 @@
 
     {% if tov %}
 
+    <form id="tovForm" onsubmit="event.preventDefault(); saveTov();">
+
     <!-- Brand personality -->
     <div class="tov-block">
       <div class="tov-block-title">Brand personality</div>
-      <div class="tov-chips">
-        {% for trait in tov.get('brand_personality', []) %}
-        <span class="tov-chip">{{ trait }}</span>
-        {% endfor %}
-      </div>
-      <div class="tov-block-note">Formality: <strong>{{ tov.get('formality_level', '—') }}</strong></div>
+      <input type="text" class="tov-input" id="tovBrandPersonality"
+             value="{{ tov.get('brand_personality', []) | join(', ') }}"
+             placeholder="Classical, Character-Driven, Empowering…">
+      <div class="tov-block-hint">Comma-separated traits</div>
+      <label class="tov-label" style="margin-top:14px">Formality level</label>
+      <input type="text" class="tov-input" id="tovFormality"
+             value="{{ tov.get('formality_level', '') }}"
+             placeholder="e.g. Warm but purposeful">
     </div>
 
     <!-- Content pillars -->
     <div class="tov-block">
       <div class="tov-block-title">Content pillars</div>
-      <div class="tov-chips">
-        {% for pillar in tov.get('content_pillars', []) %}
-        <span class="tov-chip pillar">{{ pillar }}</span>
-        {% endfor %}
-      </div>
+      <input type="text" class="tov-input" id="tovPillars"
+             value="{{ tov.get('content_pillars', []) | join(', ') }}"
+             placeholder="Academic Excellence, Character & Leadership…">
+      <div class="tov-block-hint">Comma-separated themes</div>
     </div>
 
     <!-- Vocabulary -->
     <div class="tov-block">
       <div class="tov-block-title">Vocabulary</div>
-      <div class="tov-vocab-row">
-        <div class="tov-vocab-col">
-          <div class="tov-vocab-label green">Words to use</div>
-          <div class="tov-chips small">
-            {% for word in tov.get('vocabulary', {}).get('preferred_words', []) %}
-            <span class="tov-chip small green">{{ word }}</span>
-            {% endfor %}
-          </div>
-        </div>
-        <div class="tov-vocab-col">
-          <div class="tov-vocab-label red">Words to avoid</div>
-          <div class="tov-chips small">
-            {% for word in tov.get('vocabulary', {}).get('avoided_words', []) %}
-            <span class="tov-chip small red">{{ word }}</span>
-            {% endfor %}
-          </div>
-        </div>
-      </div>
-      {% if tov.get('vocabulary', {}).get('signature_phrases') %}
-      <div class="tov-vocab-label" style="margin-top:12px">Signature phrases</div>
-      <div class="tov-chips small">
-        {% for phrase in tov.get('vocabulary', {}).get('signature_phrases', []) %}
-        <span class="tov-chip small gold">{{ phrase }}</span>
-        {% endfor %}
-      </div>
-      {% endif %}
+      <label class="tov-label green">Words to use</label>
+      <input type="text" class="tov-input" id="tovPreferred"
+             value="{{ tov.get('vocabulary', {}).get('preferred_words', []) | join(', ') }}"
+             placeholder="excellence, character, integrity…">
+      <label class="tov-label red" style="margin-top:14px">Words to avoid</label>
+      <input type="text" class="tov-input" id="tovAvoided"
+             value="{{ tov.get('vocabulary', {}).get('avoided_words', []) | join(', ') }}"
+             placeholder="elite, exclusive, expensive…">
+      <label class="tov-label" style="margin-top:14px">Signature phrases</label>
+      <input type="text" class="tov-input" id="tovPhrases"
+             value="{{ tov.get('vocabulary', {}).get('signature_phrases', []) | join(', ') }}"
+             placeholder="Knight Up, preparing tomorrow's leaders…">
     </div>
 
     <!-- Do's and Don'ts -->
     <div class="tov-block tov-rules">
       <div class="tov-rules-col">
         <div class="tov-block-title green">Always do</div>
-        <ul class="tov-list">
-          {% for item in tov.get('what_to_always_do', []) %}
-          <li>{{ item }}</li>
-          {% endfor %}
-        </ul>
+        <textarea class="tov-textarea" id="tovDo" rows="6"
+                  placeholder="One rule per line">{{ tov.get('what_to_always_do', []) | join('\n') }}</textarea>
+        <div class="tov-block-hint">One rule per line</div>
       </div>
       <div class="tov-rules-col">
         <div class="tov-block-title red">Never do</div>
-        <ul class="tov-list">
-          {% for item in tov.get('what_to_never_do', []) %}
-          <li>{{ item }}</li>
-          {% endfor %}
-        </ul>
-      </div>
-    </div>
-
-    <!-- Per-channel guidance -->
-    <div class="tov-block">
-      <div class="tov-block-title">How tone adapts per channel</div>
-      <div class="tov-channels">
-        <div class="tov-channel-card" data-platform="facebook">
-          <div class="tov-channel-dot"></div>
-          <div class="tov-channel-name">Facebook</div>
-          <div class="tov-channel-desc">Warm, community storytelling. 100–200 words. 1–2 emojis. End with a parent question or call to action.</div>
-        </div>
-        <div class="tov-channel-card" data-platform="instagram">
-          <div class="tov-channel-dot"></div>
-          <div class="tov-channel-name">Instagram</div>
-          <div class="tov-channel-desc">Visual-first, punchy opening. 40–80 words. 3–5 emojis. 5–8 hashtags. Always #BeltonPrepAcademy.</div>
-        </div>
-        <div class="tov-channel-card" data-platform="linkedin">
-          <div class="tov-channel-dot"></div>
-          <div class="tov-channel-name">LinkedIn</div>
-          <div class="tov-channel-desc">Professional but warm. Student outcomes and school mission focus. 100–200 words. No casual slang.</div>
-        </div>
-        <div class="tov-channel-card" data-platform="x">
-          <div class="tov-channel-dot"></div>
-          <div class="tov-channel-name">X / Twitter</div>
-          <div class="tov-channel-desc">One punchy sentence or stat. Max 260 characters. 1–2 hashtags. Optional emoji.</div>
-        </div>
-        <div class="tov-channel-card" data-platform="classdojo">
-          <div class="tov-channel-dot"></div>
-          <div class="tov-channel-name">ClassDojo</div>
-          <div class="tov-channel-desc">Direct parent-facing announcement. 50–120 words. No hashtags. Plain English. End with any action needed.</div>
-        </div>
-        <div class="tov-channel-card" data-platform="email">
-          <div class="tov-channel-dot"></div>
-          <div class="tov-channel-name">Newsletter</div>
-          <div class="tov-channel-desc">Parent email paragraph. 80–150 words. Clear headline, key details, warm close. Ready for Mailchimp or ClassDojo story.</div>
-        </div>
+        <textarea class="tov-textarea" id="tovDont" rows="6"
+                  placeholder="One rule per line">{{ tov.get('what_to_never_do', []) | join('\n') }}</textarea>
+        <div class="tov-block-hint">One rule per line</div>
       </div>
     </div>
 
     <!-- Emoji + hashtag style -->
-    <div class="tov-block tov-style-row">
-      <div class="tov-style-item">
-        <div class="tov-style-label">Emoji use</div>
-        <div class="tov-style-value">{{ tov.get('emoji_use', '—') }}</div>
-      </div>
-      <div class="tov-style-item">
-        <div class="tov-style-label">Hashtag style</div>
-        <div class="tov-style-value">{{ tov.get('hashtag_style', '—') }}</div>
-      </div>
+    <div class="tov-block">
+      <div class="tov-block-title">Style</div>
+      <label class="tov-label">Emoji use</label>
+      <input type="text" class="tov-input" id="tovEmoji"
+             value="{{ tov.get('emoji_use', '') }}"
+             placeholder="moderate — celebratory moments only">
+      <label class="tov-label" style="margin-top:14px">Hashtag style</label>
+      <input type="text" class="tov-input" id="tovHashtag"
+             value="{{ tov.get('hashtag_style', '') }}"
+             placeholder="#BeltonPrepAcademy first, 3–5 hashtags total">
     </div>
+
+    <!-- Save button -->
+    <div class="tov-save-row">
+      <button type="submit" class="btn-confirm tov-save-btn">Save tone of voice</button>
+      <span class="tov-save-status" id="tovSaveStatus"></span>
+    </div>
+
+    </form>
 
     {% else %}
     <div class="tov-empty">Tone of voice data not found. Check <code>data/tov_bpa.json</code>.</div>
@@ -336,6 +293,40 @@ async function deleteCategory(id) {
     document.getElementById(`cat-${id}`)?.remove();
     showToast('Category deleted');
   } catch (e) { showToast('Error: ' + e.message); }
+}
+
+async function saveTov() {
+  const split = (v) => v.split(',').map(s => s.trim()).filter(Boolean);
+  const lines = (v) => v.split('\n').map(s => s.trim()).filter(Boolean);
+  const payload = {
+    brand_personality: split(document.getElementById('tovBrandPersonality').value),
+    formality_level:   document.getElementById('tovFormality').value.trim(),
+    content_pillars:   split(document.getElementById('tovPillars').value),
+    vocabulary: {
+      preferred_words:  split(document.getElementById('tovPreferred').value),
+      avoided_words:    split(document.getElementById('tovAvoided').value),
+      signature_phrases: split(document.getElementById('tovPhrases').value),
+    },
+    what_to_always_do: lines(document.getElementById('tovDo').value),
+    what_to_never_do:  lines(document.getElementById('tovDont').value),
+    emoji_use:         document.getElementById('tovEmoji').value.trim(),
+    hashtag_style:     document.getElementById('tovHashtag').value.trim(),
+  };
+  const status = document.getElementById('tovSaveStatus');
+  status.textContent = 'Saving…'; status.className = 'tov-save-status';
+  try {
+    const resp = await fetch('/api/tov', {
+      method: 'PUT', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload),
+    });
+    if (!resp.ok) throw new Error((await resp.json()).error);
+    status.textContent = '✓ Saved — all new posts use this tone of voice';
+    status.className = 'tov-save-status success';
+    setTimeout(() => { status.textContent = ''; }, 4000);
+  } catch (e) {
+    status.textContent = 'Error: ' + e.message;
+    status.className = 'tov-save-status error';
+  }
 }
 
 async function uploadBrandAsset(input) {

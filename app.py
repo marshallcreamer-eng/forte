@@ -541,6 +541,36 @@ def create_app():
         return render_template('settings.html', categories=categories, tov=tov,
                                brand_assets=brand_assets)
 
+    # ── API: Tone of Voice ─────────────────────────────────────────────────
+
+    @app.route('/api/tov', methods=['PUT'])
+    @login_required
+    def api_save_tov():
+        data = request.get_json(silent=True) or {}
+        if not data:
+            return jsonify({'error': 'no JSON body'}), 400
+        path = os.path.join(app.root_path, 'data', 'tov_bpa.json')
+        # Preserve existing fields not in the form (school_name, etc.)
+        existing = {}
+        try:
+            with open(path) as f:
+                existing = json.load(f)
+        except Exception:
+            pass
+        existing.update({
+            'brand_personality': data.get('brand_personality', []),
+            'formality_level':   data.get('formality_level', ''),
+            'content_pillars':   data.get('content_pillars', []),
+            'vocabulary':        data.get('vocabulary', {}),
+            'what_to_always_do': data.get('what_to_always_do', []),
+            'what_to_never_do':  data.get('what_to_never_do', []),
+            'emoji_use':         data.get('emoji_use', ''),
+            'hashtag_style':     data.get('hashtag_style', ''),
+        })
+        with open(path, 'w') as f:
+            json.dump(existing, f, indent=2)
+        return jsonify({'ok': True})
+
     # ── API: Categories CRUD ───────────────────────────────────────────────
 
     @app.route('/api/categories', methods=['GET'])
