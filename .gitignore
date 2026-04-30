@@ -7,3 +7,10 @@ __pycache__/
 *.sqlite3
 instance/
 .DS_Store
+
+# Sensitive — never commit
+data/fb_cookies.txt
+data/www.facebook.com_cookies.txt
+data/www.instagram.com_cookies.txt
+data/uploads/photos/
+*_cookies.txt
