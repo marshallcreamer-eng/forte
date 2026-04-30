@@ -93,33 +93,6 @@
   </main>
 
 </div>
-<!-- ── Canva Guidance Modal ────────────────────────────────────────────── -->
-<div class="canva-overlay" id="canvaOverlay" onclick="closeCanvaModal()">
-  <div class="canva-modal" onclick="event.stopPropagation()">
-    <div class="canva-modal-top">
-      <div class="canva-copied-badge">✓ Post text copied to clipboard</div>
-      <button class="canva-modal-close" onclick="closeCanvaModal()">✕</button>
-    </div>
-    <h3 class="canva-modal-title">Open your BPA template</h3>
-    <p class="canva-modal-sub">If Canva asks to make a copy — say yes, that's normal.</p>
-
-    <a class="canva-open-btn" id="canvaOpenBtn" href="#" target="_blank" rel="noopener">
-      Open in Canva →
-    </a>
-
-    <ol class="canva-steps" style="margin-top:18px">
-      <li>Click any <strong>text</strong> in the design → paste <span class="canva-key">⌘V</span></li>
-      <li>Click the <strong>photo area</strong> → upload your photo from school</li>
-      <li>Click <strong>Share → Download</strong> → save as JPG → post</li>
-    </ol>
-  </div>
-</div>
-
-<!-- Pass Canva template URLs to JS -->
-<script>
-const CANVA_TEMPLATES = {{ canva_templates | tojson }};
-</script>
-
 {% block scripts %}{% endblock %}
 </body>
 </html>

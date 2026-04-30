@@ -704,14 +704,6 @@ a { color: inherit; text-decoration: none; }
 .btn-copy:hover { background: var(--navy-mid); }
 .btn-copy.copied { background: var(--green); }
 
-.btn-canva {
-  font-size: 11px; font-weight: 700; padding: 4px 10px;
-  background: #8b5cf6; color: var(--white);
-  border: none; border-radius: 5px; cursor: pointer;
-  font-family: 'Inter', sans-serif; transition: background 0.15s;
-}
-.btn-canva:hover { background: #7c3aed; }
-
 .btn-regen {
   font-size: 11px; font-weight: 600; padding: 4px 10px;
   background: var(--grey-bg); color: var(--text-mid);
@@ -1000,113 +992,6 @@ textarea.form-control { resize: vertical; }
 .brand-upload-title { font-size: 14px; font-weight: 700; color: var(--navy); margin-bottom: 4px; }
 .brand-upload-sub   { font-size: 12px; color: var(--text-light); margin-bottom: 14px; line-height: 1.6; }
 .brand-upload-btn   { padding: 8px 20px; cursor: pointer; }
-
-/* ── Canva Guidance Modal ──────────────────────────────────────────────── */
-.canva-overlay {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.55);
-  display: none; align-items: center; justify-content: center;
-  z-index: 2000;
-}
-.canva-overlay.open { display: flex; }
-
-.canva-modal {
-  background: var(--white); border-radius: 16px;
-  width: 480px; max-width: 95vw;
-  padding: 28px;
-  box-shadow: 0 24px 64px rgba(0,0,0,0.3);
-}
-
-.canva-modal-top {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 16px;
-}
-
-.canva-copied-badge {
-  background: var(--green-light); color: var(--green);
-  font-size: 12px; font-weight: 700;
-  padding: 5px 12px; border-radius: 20px;
-}
-
-.canva-modal-close {
-  background: none; border: none; color: var(--text-light);
-  font-size: 16px; cursor: pointer; padding: 0;
-}
-
-.canva-modal-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 20px; font-weight: 700; color: var(--navy);
-  margin-bottom: 6px;
-}
-
-.canva-modal-sub {
-  font-size: 13px; color: var(--text-light); margin-bottom: 18px;
-}
-
-.canva-steps {
-  padding-left: 20px; margin-bottom: 24px;
-}
-.canva-steps li {
-  font-size: 14px; color: var(--text-mid); line-height: 1.8;
-  padding-left: 4px;
-}
-.canva-steps li + li { margin-top: 4px; }
-
-.canva-key {
-  display: inline-block; background: var(--grey-bg);
-  border: 1px solid var(--grey-border); border-radius: 4px;
-  padding: 1px 6px; font-size: 11px; font-family: monospace;
-  color: var(--text-mid); vertical-align: middle;
-}
-
-/* Canva modal step blocks */
-.canva-step-block {
-  background: var(--grey-bg); border-radius: 10px;
-  padding: 14px 16px; margin-bottom: 10px;
-}
-.canva-step-num {
-  font-size: 11px; font-weight: 800; text-transform: uppercase;
-  letter-spacing: 0.4px; color: var(--navy); margin-bottom: 6px;
-}
-.canva-step-desc {
-  font-size: 13px; color: var(--text-mid); margin-bottom: 10px; line-height: 1.5;
-}
-.canva-photo-instruction {
-  font-size: 12px; color: var(--text-mid); line-height: 1.5; margin-bottom: 8px;
-}
-
-/* Photo in Canva modal */
-.canva-photo-section {
-  background: var(--grey-bg); border-radius: 8px;
-  padding: 12px 14px; margin-bottom: 16px;
-}
-.canva-photo-header {
-  font-size: 11px; font-weight: 700; color: var(--text-light);
-  text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 8px;
-}
-.canva-photo-row {
-  display: flex; align-items: center; gap: 12px;
-}
-.canva-photo-thumb {
-  width: 64px; height: 64px; object-fit: cover;
-  border-radius: 8px; flex-shrink: 0;
-}
-.canva-photo-download-btn {
-  flex: 1; padding: 8px 14px; text-align: center;
-  background: var(--navy); color: var(--white);
-  border-radius: 8px; font-size: 13px; font-weight: 700;
-  text-decoration: none; transition: background 0.15s;
-}
-.canva-photo-download-btn:hover { background: var(--navy-mid); }
-
-.canva-open-btn {
-  display: block; width: 100%;
-  background: #7c3aed; color: var(--white);
-  text-align: center; padding: 13px;
-  border-radius: 10px; font-size: 14px; font-weight: 800;
-  text-decoration: none; transition: background 0.15s;
-}
-.canva-open-btn:hover { background: #6d28d9; }
 
 /* ── Toast ─────────────────────────────────────────────────────────────── */
 .toast {
@@ -1849,11 +1734,3 @@ textarea.form-control { resize: vertical; }
 }
 .ecc-btn:hover { background: var(--navy-mid); }
 
-.ecc-btn-flyer {
-  padding: 8px 14px; white-space: nowrap;
-  background: var(--white); color: #7c3aed;
-  border: 1.5px solid #7c3aed; border-radius: 8px;
-  font-size: 12px; font-weight: 700; cursor: pointer;
-  font-family: 'Inter', sans-serif; transition: all 0.15s;
-}
-.ecc-btn-flyer:hover { background: #ede9fe; }

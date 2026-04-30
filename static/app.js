@@ -435,7 +435,7 @@ function renderDraftCards(container, data) {
   const order = ['facebook', 'instagram', 'linkedin', 'x', 'classdojo', 'email'];
   const meta  = {
     facebook:  { label: 'Facebook' },
-    instagram: { label: 'Instagram', canva: true },  // Only Instagram gets Canva
+    instagram: { label: 'Instagram' },
     linkedin:  { label: 'LinkedIn' },
     x:         { label: 'X / Twitter' },
     classdojo: { label: 'ClassDojo' },
@@ -450,10 +450,6 @@ function renderDraftCards(container, data) {
     const card     = document.createElement('div');
     card.className = 'draft-card';
 
-    // Canva only on Instagram — other platforms just need Copy
-    const canvaBtn = m.canva
-      ? `<button class="btn-canva" onclick="designInCanva('${platform}', 'instagram_post', this)">Open in Canva</button>`
-      : '';
     const btHtml = bt
       ? `<div class="draft-best-time">⏰ ${bt.days} · ${bt.time} <span class="bt-note">${bt.note}</span></div>`
       : '';
@@ -462,7 +458,6 @@ function renderDraftCards(container, data) {
       <div class="draft-card-header">
         <div class="draft-platform-name plat-dot-${platform}">${m.label}</div>
         <div class="draft-card-actions">
-          ${canvaBtn}
           <button class="btn-regen" onclick="regenSingle('${platform}', this)">Regenerate</button>
           <button class="btn-copy" onclick="copyDraft(this)">Copy</button>
         </div>
@@ -536,50 +531,7 @@ function copyDraft(btn) {
   _flashCopied(btn, 'Copy');
 }
 
-// ── Canva Design ──────────────────────────────────────────────────────────
-
-function _openCanvaModal(platform, content) {
-  _copyText(content);
-
-  // Use BPA template if available, fall back to Canva gallery
-  const templates = (typeof CANVA_TEMPLATES !== 'undefined') ? CANVA_TEMPLATES : {};
-  const tpl = templates[platform];
-  const url = tpl ? tpl.url : {
-    facebook:  'https://www.canva.com/create/facebook-posts/',
-    instagram: 'https://www.canva.com/create/instagram-posts/',
-  }[platform] || 'https://www.canva.com/';
-
-  const openBtn = document.getElementById('canvaOpenBtn');
-  if (openBtn) openBtn.href = url;
-
-  const overlay = document.getElementById('canvaOverlay');
-  if (overlay) overlay.classList.add('open');
-}
-
-function closeCanvaModal() {
-  const overlay = document.getElementById('canvaOverlay');
-  if (overlay) overlay.classList.remove('open');
-}
-
-function openFlyer(eventTitle) {
-  const templates = (typeof CANVA_TEMPLATES !== 'undefined') ? CANVA_TEMPLATES : {};
-  const url = templates.flyer ? templates.flyer.url : 'https://www.canva.com/create/flyers/';
-  if (eventTitle) _copyText(eventTitle);
-  const openBtn = document.getElementById('canvaOpenBtn');
-  if (openBtn) openBtn.href = url;
-  const overlay = document.getElementById('canvaOverlay');
-  if (overlay) overlay.classList.add('open');
-  showToast('Event title copied — paste it into the flyer');
-}
-
-function designInCanva(platform, canvaType, btn) {
-  const content = btn.closest('.draft-card').querySelector('.draft-content').textContent;
-  _openCanvaModal(platform, content);
-}
-
-function designInCanvaByPlatform(platform, content) {
-  _openCanvaModal(platform, content);
-}
+// Canva integration removed — staff copy text and post directly
 
 // ── Platform Toggles ──────────────────────────────────────────────────────
 
