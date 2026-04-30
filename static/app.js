@@ -4,7 +4,7 @@
 let activeEvent     = null;   // {id, title, desc, date, category}
 let lastEventText   = '';     // last text sent to generate — used by Regenerate
 let importedEvents  = [];     // events waiting for review
-let contentType     = 'photo'; // text | photo | video
+let contentType     = ''; // text | photo | video
 let currentPhoto    = null;   // {url, filename, downloadUrl} — uploaded post photo
 
 // ── Photo upload ──────────────────────────────────────────────────────────
