@@ -304,7 +304,14 @@ function renderExistingDrafts(container, drafts) {
   const platformLabels = { facebook:'Facebook', instagram:'Instagram', linkedin:'LinkedIn', x:'X / Twitter', classdojo:'ClassDojo', email:'Newsletter' };
   const statusLabels   = { draft_ready:'Draft ready', posted:'Posted ✓', scheduled:'Scheduled', needs_post:'Needs post' };
 
-  container.innerHTML = `<div class="gen-existing-header">Previously generated</div>`;
+  const count = Object.keys(drafts.reduce((acc, d) => ({...acc, [d.platform]: 1}), {})).length;
+  container.innerHTML = `
+    <div class="gen-existing-header" id="existingHeader">
+      <span>${count} draft${count !== 1 ? 's' : ''} already created</span>
+      <button class="btn-collapse" onclick="toggleExistingDrafts()">Hide ▴</button>
+    </div>
+    <div class="gen-existing-body" id="existingBody"></div>`;
+  const body = container.querySelector('#existingBody');
 
   // Group by platform, keep latest
   const byPlatform = {};
@@ -328,8 +335,17 @@ function renderExistingDrafts(container, drafts) {
         <button class="btn-copy-small" onclick="copyDraftById(${d.id}, ${JSON.stringify(d.content)}, this)">Copy</button>
         ${d.status !== 'posted' ? `<button class="btn-mark-posted" onclick="markPosted(${d.id}, this)">✓ Mark posted</button>` : ''}
       </div>`;
-    container.appendChild(div);
+    body.appendChild(div);
   });
+}
+
+function toggleExistingDrafts() {
+  const body = document.getElementById('existingBody');
+  const btn  = document.querySelector('#existingHeader .btn-collapse');
+  if (!body || !btn) return;
+  const hidden = body.style.display === 'none';
+  body.style.display = hidden ? '' : 'none';
+  btn.textContent    = hidden ? 'Hide ▴' : 'Show ▾';
 }
 
 function closePanel() {
